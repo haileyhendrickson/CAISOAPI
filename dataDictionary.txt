@@ -7,6 +7,18 @@ endtime = hr:mn (00:00)
 queryname = specifies the kind of report wanted. EX: 'PRC_LMP' for hourly locational marginal prices
 marketRunID = specifies the type of market (DAM or RUC(maybe ACTUAL)), RTPD
 
+QUERY NAME OPTIONS:
+- PRC_LMP : Locational Marginal Prices 
+- PRC_SPTIE_LMP : Interval, FMM, Scheduling Point/Tie Combination Locational Marginal Prices 
+- PRC_INTVL_LMP : Interval Locational Marginal Prices
+- PRC_HASP_LMP : HASP Locational Marginal Prices
+- PRC_RTPD_LMP : FMM Locational Marginal Prices
+- PRC_DS_REF : Reference Prices
+- PRC_CD_INTVL_LMP : Contingency Dispatch Locational Marginal Prices
+- PRC_CD_SPTIE_LMP: Contingency Dispatch Scheduling Point/Tie Combination Locational Marginal Prices
+- PRC_RTM_LAP : Hourly RTM LAP Prices
+-- Group ones: Hourly Energy Price Shaping Factor (not including unless requested)
+
 CSV: Depends on the Query Name
 PRC_INTVL_LMP
 - 'NODE_ID_XML': node ID
