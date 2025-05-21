@@ -1,0 +1,94 @@
+Documentation/Log for the project
+
+IMPORTANT RESOURCES:
+https://www.caiso.com/documents/oasis-interfacespecification_v5_1_1clean_fall2017release.pdf PAGE 44 on doc has URL settings
+
+
+5/20-
+Started fiddling with the API query a little bit. Dive deeper into the queryname parameter- 
+it somehow specifies the type of report. Do analysts ask for the same type of report every time? 
+How do I specify a node?
+
+If the startdatetime and enddatetime have to specify a time, I will need to make an option of a "neutral" setting somehow (if statement)
+
+THIS WORKS: I'm just not sure exactly what I am looking at here.
+import pandas as pd 
+import requests
+from zipfile import ZipFile, BadZipFile
+from io import BytesIO
+
+# setting up API URL
+url = 'http://oasis.caiso.com/oasisapi/SingleZip'
+startdate = 20230415 # int(input('Please enter a start date: ')) # yyyymmdd
+starttime = '07:00-0000'
+enddate = 20230416 # int(input('Please enter an end date: ')) # yyyymmdd
+endtime = '07:00-0000'
+queryname = 'SLD_FCST' # input('Please enter report type: ') # XML Name - what kind of report you want
+marketRunID = 'DAM' # input('Please enter the type of market (DAM or RUC): ')   # market type: 'DAM' for day ahead market, 
+
+fullurl = f'{url}?queryname={queryname}&market_run_id={marketRunID}&resultformat=6&startdatetime={startdate}T{starttime}&enddatetime={enddate}T{endtime}&version=1' # taken from an example
+
+try: # using this for now for error handling
+    response = requests.get(fullurl)
+    with ZipFile(BytesIO(response.content)) as z:
+        for filename in z.namelist():
+            with z.open(filename) as f:
+                df = pd.read_csv(f)
+                df.to_csv('test.csv')
+                print(df.info())
+except BadZipFile:
+    print('Response is not a ZIP')
+    print(response.content.decode(errors='replace'))
+
+because of the way the query name works, it might be difficult to have a way for people to specify the interval. 
+IDK if there is a pattern in the queryname for identifying hourly vs 15 mins, etc.
+
+Cleaning column names will also be tricky because each queryname has different column names-- Ask Zoe about common query types
+
+I like this query better: but the LMP type is wacky. 
+import pandas as pd 
+import requests
+from zipfile import ZipFile, BadZipFile
+from io import BytesIO
+
+# setting up API URL
+url = 'http://oasis.caiso.com/oasisapi/SingleZip'
+startdate = 20250520 # int(input('Please enter a start date: ')) # yyyymmdd
+starttime = '00:00'
+enddate = 20250520 # int(input('Please enter an end date: ')) # yyyymmdd
+endtime = '03:00'
+queryname = 'PRC_LMP' # input('Please enter report type: ') # XML Name - what kind of report you want
+marketRunID = 'DAM' # input('Please enter the type of market (DAM or RUC): ')   # market type: 'DAM' for day ahead market, 
+# varParameters = {type = 'ALL' # not sure what this is, I think it is optional
+#                  region = 'ALL'
+# } # might want an if statement to include the whole url for this part
+
+region = 'ALL'
+type = 'ALL'
+
+fullurl = f'{url}?queryname={queryname}&market_run_id={marketRunID}&resultformat=6&startdatetime={startdate}T{starttime}-0000&enddatetime={enddate}T{endtime}-0000&version=1' # taken from an example
+# fullurl = f'{url}?resultformat=6&queryname={queryname}&startdate={startdate}&enddate={enddate}&market_run_id={marketRunID}&{varParameters}' # how I think it is formatted
+
+try: # using this for now for error handling
+    response = requests.get(fullurl)
+    with ZipFile(BytesIO(response.content)) as z:
+        for filename in z.namelist():
+            with z.open(filename) as f:
+                df = pd.read_csv(f)
+                # df.to_csv('test.csv')
+                # print(df.info())
+                print(df['LMP_TYPE'].value_counts())
+                # print(df['XML_DATA_ITEM'].value_counts)
+except BadZipFile:
+    print('Response is not a ZIP')
+    print(response.content.decode(errors='replace'))
+
+
+
+
+    5/21- 
+    Will need an error handling block for "14,<m:ERR_DESC>No data returned for the specified selection</m:ERR_DESC>"
+    What do the different versions mean?? ugh!
+    There might be different orders of parameters in the URL for different querys :,(
+    
+    )
