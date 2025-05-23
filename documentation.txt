@@ -87,11 +87,11 @@ except BadZipFile:
 
 
 5/21- 
-Will need an error handling block for "14,<m:ERR_DESC>No data returned for the specified selection</m:ERR_DESC>"
-What do the different versions mean?? ugh!
-There might be different orders of parameters in the URL for different querys :,(
-)
+What do the different versions mean?? ugh!-- they are just more current/updated software I think. Version 1 is fine
 figured out how to fix the parameter ordering issue! Pushed that and possibly deleted all my old pushes, oops 
 Zoe requested that I focus on all of the pulls that are under the ENERGY category, especially all the LMPs
 
 I think I have a pretty solid pull set up for now. Slightly tricky with switching between nodes and groups. 
+
+Finished the basic structure of my API program allowing for user input. It has issues for sure, but it isn't horrible. 
+Have not handled reports longer than 1 day yet. -- how does CAISO print a csv if it is longer than 30 days?

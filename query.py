@@ -2,25 +2,22 @@ import pandas as pd
 import requests
 from zipfile import ZipFile, BadZipFile
 from io import BytesIO
+import datetime
 
 # User inputs/ setting parameters
-queryname = input('Select Report Type: ') # how to make a dropdown later?
-if queryname == 'PRC_LMP':
-    market_run_id = 'DAM'
-if queryname == 'PRC_SPTIE_LMP':
-    market_run_id = 'DAM'
-if queryname == 'PRC_INTVL_LMP':
-    market_run_id = 'RTM'
-if queryname == 'PRC_HASP_LMP':
-    market_run_id = 'HASP'
-if queryname == 'PRC_RTPD_LMP':
-    market_run_id = 'PRC_RTPD_LMP'
-if queryname == 'PRC_DS_REF':
-    market_run_id = '' # NO MARKET ID FOR THIS ONE   
-if queryname == 'PRC_CD_INTVL_LMP':
-    market_run_id = 'RTM'
-if queryname == 'PRC_RTM_LAP':
-    market_run_id = 'RTM'
+market_run_map = {
+    'PRC_LMP': 'DAM',
+    'PRC_SPTIE_LMP': 'DAM',
+    'PRC_INTVL_LMP': 'RTM',
+    'PRC_HASP_LMP': 'HASP',
+    'PRC_RTPD_LMP': 'PRC_RTPD_LMP',
+    'PRC_DS_REF': '', # this one doesn't have a specified market
+    'PRC_CD_INTVL_LMP': 'RTM',
+    'PRC_RTM_LAP': 'RTM',
+}
+
+queryname = input('Select Report Type: ')
+market_run_id = market_run_map.get(queryname, '')  # Default to empty string if not found
 
 startdate = input('Enter a start date (YYYY/MM/DD): ').replace('/', '')
 enddate = input('Enter an end date (YYYY/MM/DD): ').replace('/', '')
