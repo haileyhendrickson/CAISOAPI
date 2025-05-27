@@ -5,7 +5,7 @@ Workflow:
 WEEK: (to be completed by the end of that week)
 1- finish project concept 
 2- baseline CAISO API query in python and data dictionary
-3- build cleaning program
+3- finish query bugs, build cleaning program
 4- finish bulk of cleaning, create “minimum viable product” : push code to GUI of choice (foundational parts)
 5-finish “minimum viable product”
 6- add to product, get feedback from consultants on usability

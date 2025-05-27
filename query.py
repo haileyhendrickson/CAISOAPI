@@ -2,38 +2,38 @@ import pandas as pd
 import requests
 from zipfile import ZipFile, BadZipFile
 from io import BytesIO
-import datetime
+from datetime import datetime, date, timedelta
 
 # User inputs/ setting parameters
-market_run_map = {
-    'PRC_LMP': 'DAM',
-    'PRC_SPTIE_LMP': 'DAM',
-    'PRC_INTVL_LMP': 'RTM',
-    'PRC_HASP_LMP': 'HASP',
-    'PRC_RTPD_LMP': 'PRC_RTPD_LMP',
-    'PRC_DS_REF': '', # this one doesn't have a specified market
-    'PRC_CD_INTVL_LMP': 'RTM',
-    'PRC_RTM_LAP': 'RTM',
+map = {
+    'PRC_LMP': ('DAM', 1), 
+    'PRC_SPTIE_LMP': ('DAM', 4),
+    'PRC_INTVL_LMP': ('RTM', 1),
+    'PRC_HASP_LMP': ('HASP', 1),
+    'PRC_RTPD_LMP': ('RTPD', 2),
+    'PRC_DS_REF': ('', 1), # no specified market. runs fine like this
+    'PRC_CD_INTVL_LMP': ('RTM' ,1),
+    'PRC_RTM_LAP': ('RTM', 6),
 }
 
 queryname = input('Select Report Type: ')
-market_run_id = market_run_map.get(queryname, '')  # Default to empty string if not found
+market_run_id, version = map[queryname] # setting parameters for market and version based on dictionary
 
 startdate = input('Enter a start date (YYYY/MM/DD): ').replace('/', '')
 enddate = input('Enter an end date (YYYY/MM/DD): ').replace('/', '')
-timeSelect = input('Do you want to start at a specific time? ') # add in time settings later
+timeSelect = input('Do you want to start at a specific time? (Y/N): ') # add in time settings later
 if timeSelect == 'Y':
     starttime = input('Enter Start time (hr:mn): ')
     starttime = f'{starttime}-0000'
     endtime = input('Enter End time (hr:mn): ')
     endtime = f'{endtime}-0000'
 if timeSelect == 'N':
-    starttime = '00:00-0000'
-    endtime = '00:00-0000'
+    starttime = '07:00-0000' # setting default time to 0700 because the website does the same (likely a timezone thing)
+    endtime = '08:00-0000'
 startdatetime = startdate+'T'+starttime
 enddatetime = enddate+'T'+endtime
 
-base_url = "http://oasis.caiso.com/oasisapi/SingleZip"
+url = "http://oasis.caiso.com/oasisapi/SingleZip"
 
 node = input('Specify a node. Separate multiple nodes with a comma. Leave blank for all nodes: ')
 if node == '': # means they want all nodes
@@ -43,7 +43,7 @@ if node == '': # means they want all nodes
     "startdatetime": startdatetime,
     "enddatetime": enddatetime,
     "market_run_id": market_run_id,
-    "version": "1", # version 1 is the oldest and the safest I think
+    "version": version, 
     "grp_type": "ALL_APNODES"
 }
 if node != '':
@@ -54,13 +54,14 @@ if node != '':
     "startdatetime": startdatetime,
     "enddatetime": enddatetime,
     "market_run_id": market_run_id,
-    "version": "1", # version 1 is the oldest and the safest I think
+    "version": version, 
     "node": node
 }
 
 # calling API
-try: # using this for now for error handling
-    response = requests.get(base_url, params=params)
+try: # using this for now for error handling -- doesn't work right. when there is an error it prints to the CSV
+    response = requests.get(url, params=params)
+    # print(response.url)
     with ZipFile(BytesIO(response.content)) as z:
         for filename in z.namelist():
             with z.open(filename) as f:
@@ -71,6 +72,6 @@ try: # using this for now for error handling
                 # print(df['LMP_TYPE'].value_counts())
                 # print(df['XML_DATA_ITEM'].value_counts)
                 print("Done.")
-except BadZipFile:
-    print('Response is not a ZIP')
-    print(response.content.decode(errors='replace'))
+except Exception as e: # probably need to change this for better error handling
+    print(f"Error message: {e}")
+    # print(response.content.decode(errors='replace'))
