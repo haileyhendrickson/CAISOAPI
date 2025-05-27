@@ -111,4 +111,15 @@ Intervals are set by the type of report, not able to be a filter on GUI. Unless 
     - while loop that will break large date chunks into manageable bits, and append to file
     - fix error handling? some way to measure if the dates are too wide of a range or not
 
+Met with Zoe: got feedback on making code more efficient. Learned that people will never ask for all nodes- deleted that part of the code.
+also learned that people don't know what type of report they want, they know the interval-market type. Slightly different.
+
+Next steps: beginning to end with ONE type of report, one node, from call to clean to final csv. Then add into framework. 
+also restructure the way that users interact with the parameters. Create some sort of dictionary to find the queryname.
+
+
+
+5/28-
+start: figure out what the heck is happening with the datetime thing <3
+
 test nodes: C7-1-S1_1_N002 , 0096WD_7_N001

@@ -21,41 +21,20 @@ market_run_id, version = map[queryname] # setting parameters for market and vers
 
 startdate = input('Enter a start date (YYYY/MM/DD): ').replace('/', '')
 enddate = input('Enter an end date (YYYY/MM/DD): ').replace('/', '')
-timeSelect = input('Do you want to start at a specific time? (Y/N): ') # add in time settings later
-if timeSelect == 'Y':
-    starttime = input('Enter Start time (hr:mn): ')
-    starttime = f'{starttime}-0000'
-    endtime = input('Enter End time (hr:mn): ')
-    endtime = f'{endtime}-0000'
-if timeSelect == 'N':
-    starttime = '07:00-0000' # setting default time to 0700 because the website does the same (likely a timezone thing)
-    endtime = '08:00-0000'
-startdatetime = startdate+'T'+starttime
-enddatetime = enddate+'T'+endtime
+startdatetime = startdate+'T07:00-0000'
+enddatetime = enddate+'T08:00-0000'
 
 url = "http://oasis.caiso.com/oasisapi/SingleZip"
 
-node = input('Specify a node. Separate multiple nodes with a comma. Leave blank for all nodes: ')
-if node == '': # means they want all nodes
-    params = {
-    "resultformat": 6, # should always be this- creates a CSV
-    "queryname": queryname, # determines what kind of data pull we want
-    "startdatetime": startdatetime,
-    "enddatetime": enddatetime,
-    "market_run_id": market_run_id,
-    "version": version, 
-    "grp_type": "ALL_APNODES"
-}
-if node != '':
-    node = node.replace(' ', '') # removing any spaces
-    params = {
-    "resultformat": 6, # should always be this- creates a CSV
-    "queryname": queryname, # determines what kind of data pull we want
-    "startdatetime": startdatetime,
-    "enddatetime": enddatetime,
-    "market_run_id": market_run_id,
-    "version": version, 
-    "node": node
+node = input('Specify a node. Separate multiple nodes with a comma: ').replace(' ', '')
+params = {
+"resultformat": 6, # should always be this- creates a CSV
+"queryname": queryname, # determines what kind of data pull we want
+"startdatetime": startdatetime,
+"enddatetime": enddatetime,
+"market_run_id": market_run_id,
+"version": version, 
+"node": node
 }
 
 # calling API
