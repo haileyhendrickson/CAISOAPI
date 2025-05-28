@@ -94,7 +94,7 @@ Zoe requested that I focus on all of the pulls that are under the ENERGY categor
 I think I have a pretty solid pull set up for now. Slightly tricky with switching between nodes and groups. 
 
 Finished the basic structure of my API program allowing for user input. It has issues for sure, but it isn't horrible. 
-Have not handled reports longer than 1 day yet. -- how does CAISO print a csv if it is longer than 30 days?
+Have not handled reports longer than 1 day yet. -- how does CAISO print a csv if it is longer than 30 days? (It doesn't)
 
 
 
@@ -105,7 +105,6 @@ Figured out that the PRC_DS_REF report works fine the way I have it, with the ma
 For some reason the PRC_RTM_LAP is not querying correctly. All the params look fine. I think it has to be a certain kind of date or something.
     - it only works with version 6, because it was a report created later than the rest
     - made a dictionary containing market value and the version number (speficied as 6 for PRC_RTM_LAP)
-Intervals are set by the type of report, not able to be a filter on GUI. Unless I create a weird filter thing that figures out the queryname based on market type and desired interval
 31 days issue: how to handle the error, how to break it into chunks to query, and then add to one CSV
     - spending some time learning the datetime module
     - while loop that will break large date chunks into manageable bits, and append to file
@@ -120,6 +119,10 @@ also restructure the way that users interact with the parameters. Create some so
 
 
 5/28-
-start: figure out what the heck is happening with the datetime thing <3
+Finished the bones of the beginning to end API call: from inputting start dates to a combined file for all dates (mostly just fixed the query limit issue)
+Figured out new way to call queryname using market and interval. The only issue is that there are a couple of duplicate report types. Not sure what the difference is or if they are necessary
+
+Runing into a new issue: (seemingly) random chunks of dates won't pull when I know they should. Timeout error? Maybe it's not an issue
+Can't seem to figure out where to put my counter so it cleans and goes onto the next file
 
 test nodes: C7-1-S1_1_N002 , 0096WD_7_N001

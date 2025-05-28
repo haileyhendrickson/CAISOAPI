@@ -5,17 +5,17 @@ starttime = hr:mn (00:00)
 enddate = yyyymmdd format, no dashes
 endtime = hr:mn (00:00)
 queryname = specifies the kind of report wanted. EX: 'PRC_LMP' for hourly locational marginal prices
-marketRunID = specifies the type of market (DAM or RUC(maybe ACTUAL)), RTPD
+marketRunID = specifies the type of market (DAM or RTM, HASP), RTPD
 
 QUERY NAME OPTIONS:
 - PRC_LMP : Locational Marginal Prices 
-    DAM, 60 mins, 31 day max
+    DAM, 60 mins, 
 - PRC_SPTIE_LMP : Interval, FMM, Scheduling Point/Tie Combination Locational Marginal Prices
-    DAM, 60 mins, 31 day max
+    DAM, 60 mins, 
 - PRC_INTVL_LMP : Interval Locational Marginal Prices
-    RTM, 5 mins, 31 day max
+    RTM, 5 mins,
 - PRC_HASP_LMP : HASP Locational Marginal Prices
-        HASP (hour ahead), 15 mins, 31 day max
+    HASP (hour ahead), 15 mins, 
 - PRC_RTPD_LMP : FMM Locational Marginal Prices
     RTPD (real time pre-dispatch), 15 mins
 - PRC_DS_REF : Reference Prices
@@ -25,6 +25,7 @@ QUERY NAME OPTIONS:
 - PRC_CD_SPTIE_LMP: Contingency Dispatch Scheduling Point/Tie Combination Locational Marginal Prices
     RTM, 10 mins
 - PRC_RTM_LAP : Hourly RTM LAP Prices
+    RTM, 60
 -- Group ones: Hourly Energy Price Shaping Factor (not including unless requested)
 
 CSV: Depends on the Query Name
@@ -38,7 +39,7 @@ PRC_INTVL_LMP
 - 'POS'
 
 Codes containing 'REN' (renewables)
-- 'REMEWABLE_TYPE': type of renewable, ex: solar, wind
+- 'RENEWABLE_TYPE': type of renewable, ex: solar, wind
 - 'TRADING_HUB':
 - 'LABEL': Like the title of the data pull? 
 - 'MARKET_RUN_ID_POS': code for market run ID?
