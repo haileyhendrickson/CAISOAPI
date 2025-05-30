@@ -8,23 +8,23 @@ queryname = specifies the kind of report wanted. EX: 'PRC_LMP' for hourly locati
 marketRunID = specifies the type of market (DAM or RTM, HASP), RTPD
 
 QUERY NAME OPTIONS:
-- PRC_LMP : Locational Marginal Prices 
+- PRC_LMP : Locational Marginal Prices (works, mostly)
     DAM, 60 mins, 
-- PRC_SPTIE_LMP : Interval, FMM, Scheduling Point/Tie Combination Locational Marginal Prices
+- PRC_SPTIE_LMP : Interval, FMM, Scheduling Point/Tie Combination Locational Marginal Prices (doesn't print all of the files, just some)
     DAM, 60 mins, 
-- PRC_INTVL_LMP : Interval Locational Marginal Prices
+- PRC_INTVL_LMP : Interval Locational Marginal Prices (works great! just slow)
     RTM, 5 mins,
-- PRC_HASP_LMP : HASP Locational Marginal Prices
+- PRC_HASP_LMP : HASP Locational Marginal Prices (works great, just slow)
     HASP (hour ahead), 15 mins, 
-- PRC_RTPD_LMP : FMM Locational Marginal Prices
+- PRC_RTPD_LMP : FMM Locational Marginal Prices (works, just slow)
     RTPD (real time pre-dispatch), 15 mins
-- PRC_DS_REF : Reference Prices
+- PRC_DS_REF : Reference Prices (prints the first file, can't figure it out after that. watch nodes)
     N/A market, quarterly
-- PRC_CD_INTVL_LMP : Contingency Dispatch Locational Marginal Prices
+- PRC_CD_INTVL_LMP : Contingency Dispatch Locational Marginal Prices (only printed a few lines, but it breaks after 1 file)
     RTM, 10 mins
-- PRC_CD_SPTIE_LMP: Contingency Dispatch Scheduling Point/Tie Combination Locational Marginal Prices
+- PRC_CD_SPTIE_LMP: Contingency Dispatch Scheduling Point/Tie Combination Locational Marginal Prices (haven't figured out, requres specific nodes and dates I think)
     RTM, 10 mins
-- PRC_RTM_LAP : Hourly RTM LAP Prices
+- PRC_RTM_LAP : Hourly RTM LAP Prices (couldn't get it to work. probably specific node types or something)
     RTM, 60
 -- Group ones: Hourly Energy Price Shaping Factor (not including unless requested)
 

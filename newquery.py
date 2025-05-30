@@ -9,17 +9,28 @@ def pull_request(startdate, enddate): # remove queryname later
     url = "http://oasis.caiso.com/oasisapi/SingleZip"
     startdate = int(startdate.strftime('%Y%m%d'))
     enddate = int(enddate.strftime('%Y%m%d'))
-    params = {
-    "resultformat": 6, # should always be this- creates a CSV
-    "queryname": queryname, # locational marginal prices
-    "startdatetime": f'{startdate}T07:00-0000', 
-    "enddatetime": f'{enddate}T07:00-0000', 
-    "market_run_id": market_run_id,
-    "version": version,  
-    "node": 'AMARGOSA_1_SN001'
-    }
+    if market_run_id == '': # reference prices is different- no market
+            params = {
+        "resultformat": 6, # should always be this- creates a CSV
+        "queryname": queryname, # locational marginal prices
+        "startdatetime": f'{startdate}T08:00-0000', 
+        "enddatetime": f'{enddate}T08:00-0000', 
+        "version": version,  
+        "node_id": node # reference prices uses this parameter
+        }
+    else: 
+        params = {
+            "resultformat": 6, # should always be this- creates a CSV
+            "queryname": queryname, # locational marginal prices
+            "startdatetime": f'{startdate}T08:00-0000', 
+            "enddatetime": f'{enddate}T08:00-0000', 
+            "market_run_id": market_run_id,
+            "version": version,  
+            "node": node,
+            }
+
+    response = requests.get(url, params=params)
     try:
-        response = requests.get(url, params=params)
         # print(response.url)
         with ZipFile(BytesIO(response.content)) as z:
             for filename in z.namelist():
@@ -39,29 +50,32 @@ def cleanFile(filename):
     df = df.drop(columns = ['NODE_ID_XML', 'NODE_ID', 'PNODE_RESMRID', 'OPR_DT', 'MARKET_RUN_ID', 'Unnamed: 0']) # dropping redundant columns
     df = df.sort_values(['LMP_TYPE', 'INTERVALSTARTTIME_GMT'])
     df['LMP_TYPE'] = df['LMP_TYPE'].replace({'LMP': 'LMP', 'MCC': 'Congestion', 'MCE':'Energy', 'MCL': 'Loss', 'MGHG': 'Greenhouse Gas'})
-    df['INTERVALSTARTTIME_GMT'] = df['INTERVALSTARTTIME_GMT'].str.replace('00-00:00', '').str.replace('T', ' ') # getting rid of seconds
-    df['INTERVALENDTIME_GMT'] = df['INTERVALENDTIME_GMT'].str.replace('-00:00','').str.replace('T',' ') # getting rid of seconds
+    df['INTERVALSTARTTIME_GMT'] = df['INTERVALSTARTTIME_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ') # getting rid of seconds
+    df['INTERVALENDTIME_GMT'] = df['INTERVALENDTIME_GMT'].str.replace(':00-00:00','').str.replace('T',' ') # getting rid of seconds
     df.to_csv(filename) # should replace file with cleaned version
 
 # user inputs map
 map = {
-    ('DAM', 60): ('PRC_LMP', 1), # default
-    # ('DAM', 60): ('PRC_SPTIE_LMP', 4), # what is the difference with this one?
-    ('RTM', 5): ('PRC_INTVL_LMP', 1),
-    ('HASP', 15): ('PRC_HASP_LMP', 1),
-    ('RTPD', 15): ('PRC_RTPD_LMP', 2),
-    ('N/A', 'quarterly'): ('PRC_DS_REF', 1), # no specified market. runs fine like this
-    ('RTM', 10): ('PRC_CD_INTVL_LMP', 1), # default
-    # ('RTM', 10): ('PRC_CD_SPTIE_LMP', 3), # what is the difference with this one?
-    ('RTM', 60): ('PRC_RTM_LAP', 6)
+    ('DAM', 60, 'N'): ('PRC_LMP', 1), # default
+    ('DAM', 60, 'Y'): ('PRC_SPTIE_LMP', 4), # uses a different set of nodes
+    ('RTM', 5, 'N'): ('PRC_INTVL_LMP', 1),
+    ('HASP', 15, 'N'): ('PRC_HASP_LMP', 1),
+    ('RTPD', 15, 'N'): ('PRC_RTPD_LMP', 2),
+    ('', 'quarterly', 'N'): ('PRC_DS_REF', 3), # no specified market. runs fine like this
+    ('RTM', 10, 'N'): ('PRC_CD_INTVL_LMP', 1), # default
+    ('RTM', 10, 'Y'): ('PRC_CD_SPTIE_LMP', 3), # uses a different set of nodes
+    ('RTM', 60, 'N'): ('PRC_RTM_LAP', 6)
 }
 market_run_id = input('Market Type (DAM, RTM, HASP, RTPD): ')
 interval = input('Interval (5, 10, 15, 60, quarterly): ')
 if interval != 'quarterly':
     interval = int(interval) # changing to an int if not quarterly
-queryname, version = map.get((market_run_id, interval), ('unknown', 'unknown')) # unknown is default val (means there is a error)
+if (market_run_id == 'DAM' and interval == 60) or (market_run_id =='RTM' and interval == 10):
+    SPTIE = input('Do you want SPTIE data? (Y/N): ') # differentiating between similar report types
+else:
+    SPTIE = 'N' # default to no SPTIE if there isn't an option for SPTIE
+queryname, version = map.get((market_run_id, interval, SPTIE), ('unknown', 'unknown')) # unknown is default val (means there is a error)
 node = input('Specify a node. Separate multiple nodes with a comma: ').replace(' ', '')
-
 
 # user inputs for date yyyy-mm-dd
 startdate = input('Start date (yyyy-mm-dd): ')
@@ -87,7 +101,7 @@ if difference.days > 30:
         counter += 1 
         startdate = nextdate # update start date to be next date
     for file in files:
-        cleanFile(file) # I have no stinky idea where to put this
+        # cleanFile(file) # I have no stinky idea where to put this
         df_list.append(pd.read_csv(file))
 
     df_combined = pd.concat(df_list, ignore_index=True)
