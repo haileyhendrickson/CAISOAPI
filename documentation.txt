@@ -129,24 +129,48 @@ Can't seem to figure out where to put my counter so it cleans and goes onto the 
 5/30-
 As I understand, nodes are individual points that have some sort of flow/transfer of energy through them (like from a plant or to a house)
 apnodes are aggregates of a group of nodes, and SPTie nodes are ones that connect with the grid not in CAISO boundaries
-Fixed (partially) pulling reference price data. needed a slightly different set of parameters
+Fixed pulling reference price data. needed a slightly different set of parameters
 
 Issues: 
-    - different column names to clean for each kind of pull. Create a different function for each type of clean? IDK
-    - reference prices won't pull past first file (among other report tpes)
-    - occasionally only some files/chunks won't pull
     - PRC_RTM_LAP requires something specific that isn't working currently.
 
 SPTIE work:
 - no data to pull for contingency dispatch sptie data. IDK why. tried multiple nodes and dates. doesn't even work on the website
 
-Qs for Zoe:
-    - do people use the SPTie points? (connections between balancing authorities?)
+Qs for Zoe (eventually):
     - will I need to create dropdowns of lists of available nodes? That might pose an issue- different for each report type
 
 
+6/2-
+Added time.cleep(10) to try and avoid query limits, and it seems to have solved my issue of random chunks not pulling
+Also added a separate cleaning portion for reference prices
+
+Getting lost down a rabbit hole about PRC_CD_INTL_LMP. As far as I understand, the contingency dispatch shows prices for generation needed
+last minute after a change in load demand (like when a generator falls offline). My hypothesis was that those prices would be missing
+from the regular LMP report, or that the contingency prices would be much higher. However, I can't seem to figure out any sory of correlation.
 
 
+TO DO 
+- figure out why some report types aren't pulling (practice each and document HOW-TO)
+- write cleaning program for each report type OR figure out best way to clean once pulled
+
+
+- PRC_LMP 
+    pulls great! time.sleep() automatically on.
+- PRC_SPTIE_LMP
+    pulls great! time.sleep() automatically on. MUST use SPTIE nodes (slightly different?)
+- PRC_INTVL_LMP 
+    pulls great! time.sleep() automatically on. It's just really slow because of the large amount of data from smaller intervals
+- PRC_HASP_LMP
+    pulls great! time.sleep() automatically on. 
+- PRC_RTPD_LMP
+    pulls great! time.sleep() automatically on. 
+- PRC_DS_REF 
+    pulls great! time.sleep() automatically on. has a separate cleaning code section. 
+- PRC_CD_INTVL_LMP
+    having problems combining this file because there are random chunks that don't have any data. somehow need to pass through those?
+- PRC_CD_SPTIE_LMP
+- PRC_RTM_LAP
 
 
 test nodes: C7-1-S1_1_N002 , 0096WD_7_N001
