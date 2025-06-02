@@ -7,135 +7,37 @@ https://www.caiso.com/documents/oasis-interfacespecification_v5_1_1clean_fall201
 5/20-
 Started fiddling with the API query a little bit. Dive deeper into the queryname parameter- 
 it somehow specifies the type of report. Do analysts ask for the same type of report every time? 
-How do I specify a node?
-
 If the startdatetime and enddatetime have to specify a time, I will need to make an option of a "neutral" setting somehow (if statement)
-
-THIS WORKS: I'm just not sure exactly what I am looking at here.
-import pandas as pd 
-import requests
-from zipfile import ZipFile, BadZipFile
-from io import BytesIO
-
-# setting up API URL
-url = 'http://oasis.caiso.com/oasisapi/SingleZip'
-startdate = 20230415 # int(input('Please enter a start date: ')) # yyyymmdd
-starttime = '07:00-0000'
-enddate = 20230416 # int(input('Please enter an end date: ')) # yyyymmdd
-endtime = '07:00-0000'
-queryname = 'SLD_FCST' # input('Please enter report type: ') # XML Name - what kind of report you want
-marketRunID = 'DAM' # input('Please enter the type of market (DAM or RUC): ')   # market type: 'DAM' for day ahead market, 
-
-fullurl = f'{url}?queryname={queryname}&market_run_id={marketRunID}&resultformat=6&startdatetime={startdate}T{starttime}&enddatetime={enddate}T{endtime}&version=1' # taken from an example
-
-try: # using this for now for error handling
-    response = requests.get(fullurl)
-    with ZipFile(BytesIO(response.content)) as z:
-        for filename in z.namelist():
-            with z.open(filename) as f:
-                df = pd.read_csv(f)
-                df.to_csv('test.csv')
-                print(df.info())
-except BadZipFile:
-    print('Response is not a ZIP')
-    print(response.content.decode(errors='replace'))
-
-because of the way the query name works, it might be difficult to have a way for people to specify the interval. 
-IDK if there is a pattern in the queryname for identifying hourly vs 15 mins, etc.
-
-Cleaning column names will also be tricky because each queryname has different column names-- Ask Zoe about common query types
-
-I like this query better: but the LMP type is wacky. 
-import pandas as pd 
-import requests
-from zipfile import ZipFile, BadZipFile
-from io import BytesIO
-
-# setting up API URL
-url = 'http://oasis.caiso.com/oasisapi/SingleZip'
-startdate = 20250520 # int(input('Please enter a start date: ')) # yyyymmdd
-starttime = '00:00'
-enddate = 20250520 # int(input('Please enter an end date: ')) # yyyymmdd
-endtime = '03:00'
-queryname = 'PRC_LMP' # input('Please enter report type: ') # XML Name - what kind of report you want
-marketRunID = 'DAM' # input('Please enter the type of market (DAM or RUC): ')   # market type: 'DAM' for day ahead market, 
-# varParameters = {type = 'ALL' # not sure what this is, I think it is optional
-#                  region = 'ALL'
-# } # might want an if statement to include the whole url for this part
-
-region = 'ALL'
-type = 'ALL'
-
-fullurl = f'{url}?queryname={queryname}&market_run_id={marketRunID}&resultformat=6&startdatetime={startdate}T{starttime}-0000&enddatetime={enddate}T{endtime}-0000&version=1' # taken from an example
-# fullurl = f'{url}?resultformat=6&queryname={queryname}&startdate={startdate}&enddate={enddate}&market_run_id={marketRunID}&{varParameters}' # how I think it is formatted
-
-try: # using this for now for error handling
-    response = requests.get(fullurl)
-    with ZipFile(BytesIO(response.content)) as z:
-        for filename in z.namelist():
-            with z.open(filename) as f:
-                df = pd.read_csv(f)
-                # df.to_csv('test.csv')
-                # print(df.info())
-                print(df['LMP_TYPE'].value_counts())
-                # print(df['XML_DATA_ITEM'].value_counts)
-except BadZipFile:
-    print('Response is not a ZIP')
-    print(response.content.decode(errors='replace'))
-
-
+Got a basic query structure formatted that runs.
 
 
 5/21- 
-What do the different versions mean?? ugh!-- they are just more current/updated software I think. Version 1 is fine
+Different versions- more current/updated software I think. Version 1 is fine.
 figured out how to fix the parameter ordering issue! Pushed that and possibly deleted all my old pushes, oops 
 Zoe requested that I focus on all of the pulls that are under the ENERGY category, especially all the LMPs
-
-I think I have a pretty solid pull set up for now. Slightly tricky with switching between nodes and groups. 
-
+I think I have a pretty solid pull set up for now. Slightly tricky with switching between nodes and groups. (later learned no one asks for all nodes)
 Finished the basic structure of my API program allowing for user input. It has issues for sure, but it isn't horrible. 
-Have not handled reports longer than 1 day yet. -- how does CAISO print a csv if it is longer than 30 days? (It doesn't)
-
 
 
 5/27-
 (troubleshooting query bugs)
 Set the default query time to 07:00 because that is what the website does (likely a timezone thing).
 Figured out that the PRC_DS_REF report works fine the way I have it, with the market type parameter blank.
-For some reason the PRC_RTM_LAP is not querying correctly. All the params look fine. I think it has to be a certain kind of date or something.
-    - it only works with version 6, because it was a report created later than the rest
-    - made a dictionary containing market value and the version number (speficied as 6 for PRC_RTM_LAP)
-31 days issue: how to handle the error, how to break it into chunks to query, and then add to one CSV
-    - spending some time learning the datetime module
-    - while loop that will break large date chunks into manageable bits, and append to file
-    - fix error handling? some way to measure if the dates are too wide of a range or not
-
+Figured out that different reports require different version numbers, fixed that.
 Met with Zoe: got feedback on making code more efficient. Learned that people will never ask for all nodes- deleted that part of the code.
 also learned that people don't know what type of report they want, they know the interval-market type. Slightly different.
-
-Next steps: beginning to end with ONE type of report, one node, from call to clean to final csv. Then add into framework. 
-also restructure the way that users interact with the parameters. Create some sort of dictionary to find the queryname.
-
+Restructred my 'map' to be searched by interval and market type. (More user friendly)
 
 
 5/28-
 Finished the bones of the beginning to end API call: from inputting start dates to a combined file for all dates (mostly just fixed the query limit issue)
 Figured out new way to call queryname using market and interval. The only issue is that there are a couple of duplicate report types. Not sure what the difference is or if they are necessary
 
-Runing into a new issue: (seemingly) random chunks of dates won't pull when I know they should. Timeout error? Maybe it's not an issue
-Can't seem to figure out where to put my counter so it cleans and goes onto the next file
-
 
 5/30-
 As I understand, nodes are individual points that have some sort of flow/transfer of energy through them (like from a plant or to a house)
 apnodes are aggregates of a group of nodes, and SPTie nodes are ones that connect with the grid not in CAISO boundaries
 Fixed pulling reference price data. needed a slightly different set of parameters
-
-Issues: 
-    - PRC_RTM_LAP requires something specific that isn't working currently.
-
-SPTIE work:
-- no data to pull for contingency dispatch sptie data. IDK why. tried multiple nodes and dates. doesn't even work on the website
 
 Qs for Zoe (eventually):
     - will I need to create dropdowns of lists of available nodes? That might pose an issue- different for each report type
@@ -149,14 +51,13 @@ last minute after a change in load demand (like when a generator falls offline).
 from the regular LMP report, or that the contingency prices would be much higher. However, I can't seem to figure out any sory of correlation.
 Managed to correctly pull a mostly clean version of each type of report! Woop woop!
 
-TO DO 
-- write cleaning program for each report type OR figure out best way to clean once pulled
+Next steps: talk to Jacob and Zoe about best methods for a gui (streamlit vs tkinter). ask about security issues?
 
-
+Rules/Notes for Pulling Reports:
 - PRC_LMP 
     pulls great!
 - PRC_SPTIE_LMP
-    pulls great! MUST use SPTIE nodes (slightly different?)
+    pulls great! MUST use SPTIE nodes (slightly different)
 - PRC_INTVL_LMP 
     pulls great! It's just really slow because of the large amount of data from smaller intervals
 - PRC_HASP_LMP
