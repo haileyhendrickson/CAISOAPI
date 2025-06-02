@@ -92,42 +92,47 @@
 # else:
 #     print('false')
 
-# cleaning
+# # cleaning
+# import pandas as pd
+# def cleanFile(filename):
+#     # dropping redundant and uneccesary columns
+#     df = pd.read_csv(filename) # reading in file
+
+#     if 'EFF_QTR_START_DT_GMT' in df.columns: # if the report type is reference prices
+#         # drop duplicate rows 
+#         df = df.sort_values(['EFF_QTR_START_DT_GMT']) # sort by EFF_QTR_START_DT_GMT
+#         # cleaning times
+#         df['EFF_QTR_START_DT_GMT'] = df['EFF_QTR_START_DT_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ')
+#         df['EFF_QTR_END_DT_GMT'] = df['EFF_QTR_END_DT_GMT'].str.replace(':00-00:00','').str.replace('T',' ')
+#         df['EFF_QTR_START_DT'] = df['EFF_QTR_START_DT'].str.replace(':00-00:00', '').str.replace('T', ' ') 
+#         df['EFF_QTR_END_DT'] = df['EFF_QTR_END_DT'].str.replace(':00-00:00','').str.replace('T',' ') 
+
+#     else: # all other report types
+#         all_drop = ['NODE_ID_XML', 'NODE_ID', 'PNODE_RESMRID', 'OPR_DT', 'MARKET_RUN_ID', 'Unnamed: 0']
+#         valid_columns = [col for col in all_drop if col in df.columns]
+#         df = df.drop(columns=valid_columns)
+#         # sorting by time/date
+#         df = df.sort_values(['INTERVALSTARTTIME_GMT'])
+#         # cleaning times
+#         df['INTERVALSTARTTIME_GMT'] = df['INTERVALSTARTTIME_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ') # getting rid of seconds
+#         df['INTERVALENDTIME_GMT'] = df['INTERVALENDTIME_GMT'].str.replace(':00-00:00','').str.replace('T',' ') # getting rid of seconds
+#         # conditional cleaning
+#         if 'LMP_TYPE' in df.columns:
+#                 df['LMP_TYPE'] = df['LMP_TYPE'].replace({'LMP': 'LMP', 'MCC': 'Congestion', 'MCE':'Energy', 'MCL': 'Loss', 'MGHG': 'Greenhouse Gas'})
+
+#     df.to_csv(filename) # should replace file with cleaned version
+
+# # cleaning for reference prices (no market)
+# # drop duplicate rows 
+# # sort by EFF_QTR_START_DT_GMT
+# df = df.sort_values(['EFF_QTR_START_DT_GMT'])
+#     # cleaning times
+# df['EFF_QTR_START_DT_GMT'] = df['EFF_QTR_START_DT_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ') # getting rid of seconds
+# df['EFF_QTR_END_DT_GMT'] = df['EFF_QTR_END_DT_GMT'].str.replace(':00-00:00','').str.replace('T',' ') # getting rid of seconds
+# df['EFF_QTR_START_DT'] = df['EFF_QTR_START_DT'].str.replace(':00-00:00', '').str.replace('T', ' ') # getting rid of seconds
+# df['EFF_QTR_END_DT'] = df['EFF_QTR_END_DT'].str.replace(':00-00:00','').str.replace('T',' ') # getting rid of seconds
+
 import pandas as pd
-def cleanFile(filename):
-    # dropping redundant and uneccesary columns
-    df = pd.read_csv(filename) # reading in file
-
-    if 'EFF_QTR_START_DT_GMT' in df.columns: # if the report type is reference prices
-        # drop duplicate rows 
-        df = df.sort_values(['EFF_QTR_START_DT_GMT']) # sort by EFF_QTR_START_DT_GMT
-        # cleaning times
-        df['EFF_QTR_START_DT_GMT'] = df['EFF_QTR_START_DT_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ')
-        df['EFF_QTR_END_DT_GMT'] = df['EFF_QTR_END_DT_GMT'].str.replace(':00-00:00','').str.replace('T',' ')
-        df['EFF_QTR_START_DT'] = df['EFF_QTR_START_DT'].str.replace(':00-00:00', '').str.replace('T', ' ') 
-        df['EFF_QTR_END_DT'] = df['EFF_QTR_END_DT'].str.replace(':00-00:00','').str.replace('T',' ') 
-
-    else: # all other report types
-        all_drop = ['NODE_ID_XML', 'NODE_ID', 'PNODE_RESMRID', 'OPR_DT', 'MARKET_RUN_ID', 'Unnamed: 0']
-        valid_columns = [col for col in all_drop if col in df.columns]
-        df = df.drop(columns=valid_columns)
-        # sorting by time/date
-        df = df.sort_values(['INTERVALSTARTTIME_GMT'])
-        # cleaning times
-        df['INTERVALSTARTTIME_GMT'] = df['INTERVALSTARTTIME_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ') # getting rid of seconds
-        df['INTERVALENDTIME_GMT'] = df['INTERVALENDTIME_GMT'].str.replace(':00-00:00','').str.replace('T',' ') # getting rid of seconds
-        # conditional cleaning
-        if 'LMP_TYPE' in df.columns:
-                df['LMP_TYPE'] = df['LMP_TYPE'].replace({'LMP': 'LMP', 'MCC': 'Congestion', 'MCE':'Energy', 'MCL': 'Loss', 'MGHG': 'Greenhouse Gas'})
-
-    df.to_csv(filename) # should replace file with cleaned version
-
-# cleaning for reference prices (no market)
-# drop duplicate rows 
-# sort by EFF_QTR_START_DT_GMT
-df = df.sort_values(['EFF_QTR_START_DT_GMT'])
-    # cleaning times
-df['EFF_QTR_START_DT_GMT'] = df['EFF_QTR_START_DT_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ') # getting rid of seconds
-df['EFF_QTR_END_DT_GMT'] = df['EFF_QTR_END_DT_GMT'].str.replace(':00-00:00','').str.replace('T',' ') # getting rid of seconds
-df['EFF_QTR_START_DT'] = df['EFF_QTR_START_DT'].str.replace(':00-00:00', '').str.replace('T', ' ') # getting rid of seconds
-df['EFF_QTR_END_DT'] = df['EFF_QTR_END_DT'].str.replace(':00-00:00','').str.replace('T',' ') # getting rid of seconds
+import numpy 
+df = pd.read_csv('pull#2.csv')
+print(df.columns)

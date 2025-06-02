@@ -143,36 +143,38 @@ Qs for Zoe (eventually):
 
 6/2-
 Added time.cleep(10) to try and avoid query limits, and it seems to have solved my issue of random chunks not pulling
-Also added a separate cleaning portion for reference prices
-
+Also added a separate cleaning portion for reference prices.
 Getting lost down a rabbit hole about PRC_CD_INTL_LMP. As far as I understand, the contingency dispatch shows prices for generation needed
 last minute after a change in load demand (like when a generator falls offline). My hypothesis was that those prices would be missing
 from the regular LMP report, or that the contingency prices would be much higher. However, I can't seem to figure out any sory of correlation.
-
+Managed to correctly pull a mostly clean version of each type of report! Woop woop!
 
 TO DO 
-- figure out why some report types aren't pulling (practice each and document HOW-TO)
 - write cleaning program for each report type OR figure out best way to clean once pulled
 
 
 - PRC_LMP 
-    pulls great! time.sleep() automatically on.
+    pulls great!
 - PRC_SPTIE_LMP
-    pulls great! time.sleep() automatically on. MUST use SPTIE nodes (slightly different?)
+    pulls great! MUST use SPTIE nodes (slightly different?)
 - PRC_INTVL_LMP 
-    pulls great! time.sleep() automatically on. It's just really slow because of the large amount of data from smaller intervals
+    pulls great! It's just really slow because of the large amount of data from smaller intervals
 - PRC_HASP_LMP
-    pulls great! time.sleep() automatically on. 
+    pulls great! 
 - PRC_RTPD_LMP
-    pulls great! time.sleep() automatically on. 
+    pulls great! 
 - PRC_DS_REF 
-    pulls great! time.sleep() automatically on. has a separate cleaning code section. 
+    pulls great! has a separate cleaning code section. 
 - PRC_CD_INTVL_LMP
-    having problems combining this file because there are random chunks that don't have any data. somehow need to pass through those?
+    pulls great! had to pass files without data
 - PRC_CD_SPTIE_LMP
-- PRC_RTM_LAP
+    pulls great! had to pass files without data
+- PRC_RTM_LAP (Load Aggregated Point)
+    pull great! Use the right nodes though. (RTM_LAP, might be apnodes, might be sptie, or something else)
+
 
 
 test nodes: C7-1-S1_1_N002 , 0096WD_7_N001
 sptie nodes: AMARGOSA_1_SN001
 reference prices: BELRIDGE_1_N001
+RTM_LAP: CLAP_AEPCO-APND
