@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import filedialog
 from tkinter import *
 from tkcalendar import Calendar
 from customtkinter import *
@@ -147,19 +146,20 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
 def submit(): # handles user inputs and checks for SPTIE
     market_run_id=market_type_var.get()
     interval=interval_var.get()
-
+    print(interval, market_run_id)
     if interval != 'quarterly':
         interval = int(interval) # changing to an int if not quarterly
         
     if (market_run_id == 'DAM' and interval == 60) or (market_run_id =='RTM' and interval == 10):
-        sptie_label.grid(row=5, column=1)
-        sptie_entry.grid(row=5,column=2)
+        sptieCheckBox.grid(row=5, column=1)
+        # if box is checked, sptie = Y
+        # https://customtkinter.tomschimansky.com/documentation/widgets/combobox
     else:
         sptie_var.set = 'N' # default to no SPTIE if there isn't an option for SPTIE
-        sptie_label.grid_remove()
-        sptie_entry.grid_remove()
+        sptieCheckBox.grid_remove()
 
-    sptie_choice = tk.Button(root, text='Pull Data', command=lambda: pullmydata(market_run_id, interval, startdate, enddate))
+
+    sptie_choice = CTkButton(master=root, text='Pull Data', command=lambda: pullmydata(market_run_id, interval, startdate, enddate), corner_radius=32,fg_color='#C850C0', hover_color='#4158D0')
     sptie_choice.grid(row=6,column=2)
 
     market_type_var.set("") # not sure what these are here for
@@ -174,25 +174,18 @@ def pullmydata(market_run_id, interval, startdate, enddate): # final button to p
 def findStartDate(): # need to alter so I can choose start and end date with same calendar
     global startdate
     startdate = cal.get_date()
-    startdate_label.config(text=f'Start date: {startdate}')
+    startdate_label.configure(text=f'Start date: {startdate}', text_color='#FFCC70')
 
 def findEndDate(): # need to alter so I can choose start and end date with same calendar
     global enddate
     enddate = cal.get_date()
-    enddate_label.config(text=f'End date: {enddate}')
+    enddate_label.configure(text=f'End date: {enddate}', text_color='#FFCC70')
 
-def select_output_file():
-    global output_file_path
-    directory = filedialog.askdirectory(title='Select output directory')
-    if directory:
-        output_file_path = directory
-        output_file_label.config(text=directory)
-    else:
-        output_file_label.config(text='No directory selected yet')
 
 # tkinter program
-root=tk.Tk() # opening/initializing program
-root.geometry("800x600")# setting the windows size
+root = CTk() # initializing window
+root.geometry('800x600') # setting size
+set_appearance_mode('dark') # can also be light
 
 # declaring string variable for storing MRID and interval- defining as a string?
 market_type_var=tk.StringVar() 
@@ -203,31 +196,26 @@ startdate = None # initializing
 enddate = None
 
 # widgets
-MRID_label = tk.Label(root, text = 'Market Type:', font=('calibre',10, 'bold'))
-MRID_entry = tk.Entry(root,textvariable = market_type_var, font=('calibre',10,'normal'))
-MRIDoptions_label = tk.Label(root, text='DAM, RTM, HASP, or RTPD', font=('calibre',10))
+MRID_label = CTkLabel(root, text = 'Market Type:', font=('Arial',20, 'bold'), text_color='#FFCC70')
+MRIDDropdown = CTkComboBox(master=root, values=['DAM', 'RTM', 'HASP', 'RTPD'])
  
-intvl_label = tk.Label(root, text = 'Interval:', font = ('calibre',10,'bold'))
-intvl_entry = tk.Entry(root, textvariable = interval_var, font = ('calibre',10,'normal'))
-intvloptions_label = tk.Label(root, text='5, 10, 15, 60, quarterly', font=('calibre',10))
+intvl_label = CTkLabel(root, text = 'Interval:', font = ('Arial',20,'bold'), text_color='#FFCC70')
+intvlDropdown = CTkComboBox(master=root, values=['5','10','15','60','quarterly'])
 
 cal = Calendar(root, selectmode ='day',
             year=2024, month =1, # defaults
             day = 1)
 
-chooseStartDate = Button(root, text='Choose Start Date', command=findStartDate)
-chooseEndDate = Button(root, text='Choose End Date', command=findEndDate)
+chooseStartDate = CTkButton(root, text='Choose Start Date', command=findStartDate, corner_radius=32,fg_color='#C850C0', hover_color='#4158D0')
+chooseEndDate = CTkButton(root, text='Choose End Date', command=findEndDate, corner_radius=32,fg_color='#C850C0', hover_color='#4158D0')
 
-startdate_label = tk.Label(root, text= 'Start Date: ') 
-enddate_label = tk.Label(root, text='End Date: ')
+startdate_label = CTkLabel(root, text= 'Start Date: ', font=('Arial',20), text_color='#FFCC70') 
+enddate_label = CTkLabel(root, text='End Date: ', font=('Arial',20), text_color='#FFCC70')
 
-sptie_label = tk.Label(root, text='Do you want SPTIE data? (Y/N): ', font=('calibre',10))
-sptie_entry = tk.Entry(root,textvariable = sptie_var, font=('calibre',10))
 
-sub_btn=tk.Button(root,text = 'Submit', command = submit) # submit is calling 'submit' function (gets user inputs)
+sptieCheckBox = CTkCheckBox(master=root, text='Do you want SPTIE data?', fg_color='#C850C0', corner_radius=36)
 
-output_file_button = tk.Button(root, text='Select Output File Path', command=select_output_file)
-output_file_label = tk.Label(root, text='No file selected yet')
+sub_btn=CTkButton(master=root,text = 'Submit', command = submit, corner_radius=32,fg_color='#C850C0', hover_color='#4158D0') # submit is calling 'submit' function (gets user inputs)
 
 # grid 
 cal.grid(row=0,column=0)
@@ -235,14 +223,10 @@ chooseStartDate.grid(row=1,column=0)
 chooseEndDate.grid(row=2,column=0)
 MRID_label.grid(row=1, column=1)
 intvl_label.grid(row=2,column=1)
-MRID_entry.grid(row=1, column=2)
-intvl_entry.grid(row=2, column=2)
+MRIDDropdown.grid(row=1,column=2)
 sub_btn.grid(row=3,column=2)
-MRIDoptions_label.grid(row=1,column=3)
-intvloptions_label.grid(row=2,column=3)
+intvlDropdown.grid(row=2,column=2)
 startdate_label.grid(row=3, column=1)
 enddate_label.grid(row=4, column=1)
-output_file_button.grid(row=11, column=0)
-output_file_label.grid(row=12, column=0)
 
 root.mainloop() # performing an infinite loop for the window to display
