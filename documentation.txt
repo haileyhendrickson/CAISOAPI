@@ -74,6 +74,16 @@ Rules/Notes for Pulling Reports:
     pull great! Use the right nodes though. (RTM_LAP, might be apnodes, might be sptie, or something else)
 
 
+6/3-
+Started working on tkinter today! I figured I would start with this and then if we decide later that streamlit 
+is better I can change it.
+This stuff is tricky to remember all the rules for creating and publishing widgets. It's going okay.
+
+After lunch:
+- make SPTIE widget run before it pulls everything-- UGH. huge problem. probably have to do some big 
+resturcturing of 'go' button and all my functions and such
+- fix what is wrong with version number on pull
+
 
 test nodes: C7-1-S1_1_N002 , 0096WD_7_N001
 sptie nodes: AMARGOSA_1_SN001
