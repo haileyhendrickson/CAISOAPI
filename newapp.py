@@ -39,7 +39,7 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
                 }
 
         response = requests.get(url, params=params)
-        #print(response.url)
+        # print(response.url)
 
         try:
             with ZipFile(BytesIO(response.content)) as z:
@@ -67,11 +67,11 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
             df['EFF_QTR_START_DT'] = df['EFF_QTR_START_DT'].str.replace(':00-00:00', '').str.replace('T', ' ') 
             df['EFF_QTR_END_DT'] = df['EFF_QTR_END_DT'].str.replace(':00-00:00','').str.replace('T',' ') 
 
-        if 'INTERVAL_START_GMT' in df.columns: # if report type is PRC_RTM_LAP
+        elif 'INTERVAL_START_GMT' in df.columns: # if report type is PRC_RTM_LAP
             df = df.sort_values(['INTERVAL_START_GMT'])
             df['INTERVAL_START_GMT'] = df['INTERVAL_START_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ')
             df['INTERVAL_END_GMT'] = df['INTERVAL_END_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ')
-            df['DATA_ITEM'] = df['LMP_TYPE'].replace({'LMP_PRC': 'LMP', 'LMP_CONG_PRC': 'Congestion', 'LMP_ENE_PRC':'Energy', 'LMP_LOSS_PRC': 'Loss', 'LMP_GHG_PRC': 'Greenhouse Gas'})
+            df['DATA_ITEM'] = df['DATA_ITEM'].replace({'LMP_PRC': 'LMP', 'LMP_CONG_PRC': 'Congestion', 'LMP_ENE_PRC':'Energy', 'LMP_LOSS_PRC': 'Loss', 'LMP_GHG_PRC': 'Greenhouse Gas'})
             df = df.drop(columns=['OPR_DATE'])
             df = df.rename(columns={'RESOURCE_NAME': 'NODE'})
 
@@ -92,7 +92,7 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
     map = {
         ('DAM', 60, 'N'): ('PRC_LMP', 1), # default
         ('DAM', 60, 'Y'): ('PRC_SPTIE_LMP', 4), # uses a different set of nodes
-        ('RTM', 5, 'N'): ('PRC_INTVL_LMP', 1),
+        ('RTM', 5, 'N'): ('PRC_INTVL_LMP', 3),
         ('HASP', 15, 'N'): ('PRC_HASP_LMP', 1),
         ('RTPD', 15, 'N'): ('PRC_RTPD_LMP', 2),
         ('', 'quarterly', 'N'): ('PRC_DS_REF', 3), # no specified market. runs fine like this
@@ -101,9 +101,7 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
         ('RTM', 60, 'N'): ('PRC_RTM_LAP', 6)
     }
     
-
     queryname, version = map.get((market_run_id, interval, sptie), ('unknown', 'unknown')) # unknown is default val (means there is a error)
-    node = '0096WD_7_N001' # input('Specify a node. Separate multiple nodes with a comma: ').replace(' ', '')
 
     startdate = datetime.strptime(startdate, '%m/%d/%y').date() # formats it to work with datetime package
     enddate = datetime.strptime(enddate, '%m/%d/%y').date()
@@ -137,12 +135,14 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
         df_combined = df_combined.drop(columns=conditional_drop)
         df_combined = df_combined.drop_duplicates() # dropping duplicate rows
         df_combined.to_csv(f'combinedFileFor{startdate}To{enddate}.csv', index=False)
+        root.after(3000, root.destroy) # quits 3 seconds after finishing
 
     if difference.days <= 30:
         print(f'Pulling data for {startdate} to {enddate}.')
         pull_request(startdate, enddate)
-        # clean the file!!
+        cleanFile('pull#0.csv')
         print('Done.')
+        root.after(3000, root.destroy) # quits 3 seconds after finishing
 
 # button functions
 def submit(): # handles user inputs and checks for SPTIE
@@ -151,14 +151,15 @@ def submit(): # handles user inputs and checks for SPTIE
 
     if interval != 'quarterly':
         interval = int(interval) # changing to an int if not quarterly
-        
+
     if (market_run_id == 'DAM' and interval == 60) or (market_run_id =='RTM' and interval == 10):
         sptie_label.grid(row=5, column=1)
         sptie_entry.grid(row=5,column=2)
     else:
-        sptie_var.set = 'N' # default to no SPTIE if there isn't an option for SPTIE
+        sptie_var.set('N') # default to no SPTIE if there isn't an option for SPTIE
         sptie_label.grid_remove()
         sptie_entry.grid_remove()
+    
 
     sptie_choice = tk.Button(root, text='Pull Data', command=lambda: pullmydata(market_run_id, interval, startdate, enddate))
     sptie_choice.grid(row=6,column=2)
@@ -171,6 +172,7 @@ def pullmydata(market_run_id, interval, startdate, enddate): # final button to p
     finished_label = tk.Label(root, text=f'Finished!')
     finished_label.grid(row=9,column=1)
     backend(market_run_id, interval, startdate, enddate, sptie) # need to add node
+
 
 def findStartDate(): # need to alter so I can choose start and end date with same calendar
     global startdate
@@ -262,7 +264,8 @@ MRIDoptions_label.grid(row=1,column=3)
 intvloptions_label.grid(row=2,column=3)
 startdate_label.grid(row=3, column=1)
 enddate_label.grid(row=4, column=1)
-output_file_button.grid(row=11, column=0)
-output_file_label.grid(row=12, column=0)
+output_file_button.grid(row=4, column=0)
+output_file_label.grid(row=5, column=0)
+
 
 root.mainloop() # performing an infinite loop for the window to display

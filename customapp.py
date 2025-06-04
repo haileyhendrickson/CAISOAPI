@@ -197,10 +197,10 @@ enddate = None
 
 # widgets
 MRID_label = CTkLabel(root, text = 'Market Type:', font=('Arial',20, 'bold'), text_color='#04033A')
-MRIDDropdown = CTkComboBox(master=root, values=['DAM', 'RTM', 'HASP', 'RTPD'])
+MRIDDropdown = CTkComboBox(master=root, values=['DAM', 'RTM', 'HASP', 'RTPD', ''], command=submit)
  
 intvl_label = CTkLabel(root, text = 'Interval:', font = ('Arial',20,'bold'), text_color='#04033A')
-intvlDropdown = CTkComboBox(master=root, values=['5','10','15','60','quarterly'])
+intvlDropdown = CTkComboBox(master=root, values=['5','10','15','60','quarterly'], command=submit)
 
 cal = Calendar(root, selectmode ='day',
             year=2024, month =1, # defaults
