@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import filedialog, ttk
 from tkinter import *
 from tkcalendar import Calendar
 from customtkinter import *
@@ -12,6 +13,7 @@ import time
 # all the functions
 def backend(market_run_id, interval, startdate, enddate, sptie): # actually pulls data
     # API Calling Function
+    node=node_var.get()
     def pull_request(startdate, enddate): # remove queryname later
         startdate = int(startdate.strftime('%Y%m%d')) # updating date format
         enddate = int(enddate.strftime('%Y%m%d'))
@@ -37,7 +39,7 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
                 }
 
         response = requests.get(url, params=params)
-        #print(response.url)
+        # print(response.url)
 
         try:
             with ZipFile(BytesIO(response.content)) as z:
@@ -53,7 +55,7 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
                             files.append(f'pull#{counter}.csv') 
         except Exception as e: 
             print(f"Error message: {e}")
-        
+
     # cleaning function!
     def cleanFile(filename):
         df = pd.read_csv(filename) # reading in file
@@ -65,11 +67,11 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
             df['EFF_QTR_START_DT'] = df['EFF_QTR_START_DT'].str.replace(':00-00:00', '').str.replace('T', ' ') 
             df['EFF_QTR_END_DT'] = df['EFF_QTR_END_DT'].str.replace(':00-00:00','').str.replace('T',' ') 
 
-        if 'INTERVAL_START_GMT' in df.columns: # if report type is PRC_RTM_LAP
+        elif 'INTERVAL_START_GMT' in df.columns: # if report type is PRC_RTM_LAP
             df = df.sort_values(['INTERVAL_START_GMT'])
             df['INTERVAL_START_GMT'] = df['INTERVAL_START_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ')
             df['INTERVAL_END_GMT'] = df['INTERVAL_END_GMT'].str.replace(':00-00:00', '').str.replace('T', ' ')
-            df['DATA_ITEM'] = df['LMP_TYPE'].replace({'LMP_PRC': 'LMP', 'LMP_CONG_PRC': 'Congestion', 'LMP_ENE_PRC':'Energy', 'LMP_LOSS_PRC': 'Loss', 'LMP_GHG_PRC': 'Greenhouse Gas'})
+            df['DATA_ITEM'] = df['DATA_ITEM'].replace({'LMP_PRC': 'LMP', 'LMP_CONG_PRC': 'Congestion', 'LMP_ENE_PRC':'Energy', 'LMP_LOSS_PRC': 'Loss', 'LMP_GHG_PRC': 'Greenhouse Gas'})
             df = df.drop(columns=['OPR_DATE'])
             df = df.rename(columns={'RESOURCE_NAME': 'NODE'})
 
@@ -90,7 +92,7 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
     map = {
         ('DAM', 60, 'N'): ('PRC_LMP', 1), # default
         ('DAM', 60, 'Y'): ('PRC_SPTIE_LMP', 4), # uses a different set of nodes
-        ('RTM', 5, 'N'): ('PRC_INTVL_LMP', 1),
+        ('RTM', 5, 'N'): ('PRC_INTVL_LMP', 3),
         ('HASP', 15, 'N'): ('PRC_HASP_LMP', 1),
         ('RTPD', 15, 'N'): ('PRC_RTPD_LMP', 2),
         ('', 'quarterly', 'N'): ('PRC_DS_REF', 3), # no specified market. runs fine like this
@@ -99,14 +101,14 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
         ('RTM', 60, 'N'): ('PRC_RTM_LAP', 6)
     }
     
-
     queryname, version = map.get((market_run_id, interval, sptie), ('unknown', 'unknown')) # unknown is default val (means there is a error)
-    node = '0096WD_7_N001' # input('Specify a node. Separate multiple nodes with a comma: ').replace(' ', '')
 
     startdate = datetime.strptime(startdate, '%m/%d/%y').date() # formats it to work with datetime package
     enddate = datetime.strptime(enddate, '%m/%d/%y').date()
     difference = enddate - startdate # counts days in between
     days = difference.days # making a counter for my loop bc .days is readonly
+
+
 
     files = [] # creating an empty list for my files
     df_list = []
@@ -123,6 +125,7 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
             days -= 30 # updating this counter
             counter += 1 
             startdate = nextdate # update start date to be next date
+            # progressbar.step()
             time.sleep(10) # avoiding query limits
         for file in files: # if tabbed over, it cleans each pull before combining, but is bad at error handling
             cleanFile(file) 
@@ -134,53 +137,57 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
         conditional_drop = [col for col in cond_drop if col in df_combined.columns]
         df_combined = df_combined.drop(columns=conditional_drop)
         df_combined = df_combined.drop_duplicates() # dropping duplicate rows
-        df_combined.to_csv(f'combinedFileFor{startdate}To{enddate}.csv', index=False)
+        df_combined.to_csv(f'{output_file_path}/{market_run_id}-{interval}mins-{node}for{startdate}to{enddate}.csv', index=False)
+        # root.after(3000, root.destroy) # quits 3 seconds after finishing
 
     if difference.days <= 30:
         print(f'Pulling data for {startdate} to {enddate}.')
         pull_request(startdate, enddate)
-        # clean the file!!
-        print('Done.')
+        cleanFile('pull#0.csv')
+        df = pd.read_csv('pull#0.csv')
+        df.to_csv(f'{output_file_path}/{market_run_id}-{interval}mins-{node}for{startdate}to{enddate}.csv', index=False)
+        # root.after(3000, root.destroy) # quits 3 seconds after finishing
 
 # button functions
 def submit(): # handles user inputs and checks for SPTIE
-    market_run_id=market_type_var.get()
-    interval=interval_var.get()
-    print(interval, market_run_id)
+    finished_label = tk.Label(root, text=f'')
+    market_run_id=MRIDDropdown.get()
+    interval=intvlDropdown.get()
+
+    market_run_id = market_run_id.upper()
+
     if interval != 'quarterly':
         interval = int(interval) # changing to an int if not quarterly
-        
-    if (market_run_id == 'DAM' and interval == 60) or (market_run_id =='RTM' and interval == 10):
-        sptieCheckBox.grid(row=5, column=1)
-        # if box is checked, sptie = Y
-        # https://customtkinter.tomschimansky.com/documentation/widgets/combobox
-    else:
-        sptie_var.set = 'N' # default to no SPTIE if there isn't an option for SPTIE
-        sptieCheckBox.grid_remove()
-
-
-    sptie_choice = CTkButton(master=root, text='Pull Data', command=lambda: pullmydata(market_run_id, interval, startdate, enddate), corner_radius=32,fg_color="#162157", hover_color="#6D7DCF")
-    sptie_choice.grid(row=6,column=2)
-
-    market_type_var.set("") # not sure what these are here for
-    interval_var.set("")
-
-def pullmydata(market_run_id, interval, startdate, enddate): # final button to pull and create the file
-    sptie=sptie_var.get()
-    finished_label = tk.Label(root, text=f'Finished!')
-    finished_label.grid(row=9,column=1)
-    backend(market_run_id, interval, startdate, enddate, sptie) # need to add node
+    
+    # finished_label = tk.Label(root, text=f'Finished!', font=('Arial',20), text_color='#04033A')
+    # finished_label.grid(row=9,column=1)
+    backend(market_run_id, interval, startdate, enddate, sptie)
 
 def findStartDate(): # need to alter so I can choose start and end date with same calendar
     global startdate
     startdate = cal.get_date()
-    startdate_label.configure(text=f'Start date: {startdate}', text_color="#04033A")
+    startdate_label.configure(text=f'Start date: {startdate}')
 
 def findEndDate(): # need to alter so I can choose start and end date with same calendar
     global enddate
     enddate = cal.get_date()
-    enddate_label.configure(text=f'End date: {enddate}', text_color='#04033A')
+    enddate_label.configure(text=f'End date: {enddate}')
 
+def select_output_file(): 
+    global output_file_path
+    directory = filedialog.askdirectory(title='Select output directory')
+    if directory:
+        output_file_path = directory
+        output_file_label.configure(text=directory)
+    else:
+        output_file_label.configure(text='No directory selected yet')
+
+def sptie_toggle():
+    global sptie
+    spite=spite.var.get()
+
+# def clicker(): # for progress bar
+#     progressbar.step()
 
 # tkinter program
 root = CTk() # initializing window
@@ -188,9 +195,9 @@ root.geometry('800x600') # setting size
 set_appearance_mode('light') # can also be light
 
 # declaring string variable for storing MRID and interval- defining as a string?
-market_type_var=tk.StringVar() 
-interval_var=tk.StringVar()
-sptie_var=tk.StringVar()
+sptie_var=tk.StringVar(value='N')
+sptie='N'
+node_var=tk.StringVar()
 
 startdate = None # initializing
 enddate = None
@@ -206,27 +213,42 @@ cal = Calendar(root, selectmode ='day',
             year=2024, month =1, # defaults
             day = 1)
 
-chooseStartDate = CTkButton(root, text='Choose Start Date', command=findStartDate, corner_radius=32,fg_color='#162157', hover_color='#6D7DCF')
-chooseEndDate = CTkButton(root, text='Choose End Date', command=findEndDate, corner_radius=32,fg_color='#162157', hover_color='#6D7DCF')
+chooseStartDate = CTkButton(root, text='Choose Start Date', command=findStartDate, corner_radius=26,fg_color='#162157', hover_color='#6D7DCF')
+chooseEndDate = CTkButton(root, text='Choose End Date', command=findEndDate, corner_radius=26,fg_color='#162157', hover_color='#6D7DCF')
 
-startdate_label = CTkLabel(root, text= 'Start Date: ', font=('Arial',20), text_color='#04033A') 
-enddate_label = CTkLabel(root, text='End Date: ', font=('Arial',20), text_color='#04033A')
+startdate_label = CTkLabel(root, text= 'Start Date: ', font=('Arial',20, 'bold'), text_color='#04033A') 
+enddate_label = CTkLabel(root, text='End Date: ', font=('Arial',20, 'bold'), text_color='#04033A')
 
+node_label = CTkLabel(root, text='Node(s)', font=('Arial',20, 'bold'), text_color='#04033A')
+node_entry = CTkEntry(root, textvariable = node_var, font=('Arial',20), text_color='#04033A')
 
-sptieCheckBox = CTkCheckBox(master=root, text='Do you want SPTIE data?', fg_color='#162157', corner_radius=36)
+sptiecheckbox = CTkCheckBox(root, text= 'SPTIE?', variable=sptie_var, offvalue='N', onvalue='Y', command=sptie_toggle)
 
 sub_btn=CTkButton(master=root,text = 'Submit', command = submit, corner_radius=32,fg_color='#162157', hover_color='#6D7DCF') # submit is calling 'submit' function (gets user inputs)
+
+output_file_button = CTkButton(root, text='Select Output File Path', command=select_output_file, corner_radius=32,fg_color='#162157', hover_color='#6D7DCF')
+output_file_label = CTkLabel(root, text='No file selected yet', font=('Arial',10), text_color='#04033A')
+
+# progressbar = CTkProgressBar(master=root, progress_color="#22E932", fg_color="#A8A8AD", mode='determinate', )
+# progressbar.set(0)
+
 
 # grid 
 cal.grid(row=0,column=0)
 chooseStartDate.grid(row=1,column=0) 
 chooseEndDate.grid(row=2,column=0)
 MRID_label.grid(row=1, column=1)
+MRIDDropdown.grid(row=1, column=2)
 intvl_label.grid(row=2,column=1)
-MRIDDropdown.grid(row=1,column=2)
-sub_btn.grid(row=3,column=2)
 intvlDropdown.grid(row=2,column=2)
-startdate_label.grid(row=3, column=1)
-enddate_label.grid(row=4, column=1)
+node_label.grid(row=3, column=1)
+node_entry.grid(row=3,column=2)
+sub_btn.grid(row=6,column=2)
+sptiecheckbox.grid(row=1,column=3)
+startdate_label.grid(row=4, column=1)
+enddate_label.grid(row=5, column=1)
+output_file_button.grid(row=4, column=0)
+output_file_label.grid(row=5, column=0)
+# progressbar.grid(row=0, column=2)
 
 root.mainloop() # performing an infinite loop for the window to display
