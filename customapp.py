@@ -159,7 +159,7 @@ def submit(): # handles user inputs and checks for SPTIE
         sptieCheckBox.grid_remove()
 
 
-    sptie_choice = CTkButton(master=root, text='Pull Data', command=lambda: pullmydata(market_run_id, interval, startdate, enddate), corner_radius=32,fg_color='#C850C0', hover_color='#4158D0')
+    sptie_choice = CTkButton(master=root, text='Pull Data', command=lambda: pullmydata(market_run_id, interval, startdate, enddate), corner_radius=32,fg_color="#162157", hover_color="#6D7DCF")
     sptie_choice.grid(row=6,column=2)
 
     market_type_var.set("") # not sure what these are here for
@@ -174,18 +174,18 @@ def pullmydata(market_run_id, interval, startdate, enddate): # final button to p
 def findStartDate(): # need to alter so I can choose start and end date with same calendar
     global startdate
     startdate = cal.get_date()
-    startdate_label.configure(text=f'Start date: {startdate}', text_color='#FFCC70')
+    startdate_label.configure(text=f'Start date: {startdate}', text_color="#04033A")
 
 def findEndDate(): # need to alter so I can choose start and end date with same calendar
     global enddate
     enddate = cal.get_date()
-    enddate_label.configure(text=f'End date: {enddate}', text_color='#FFCC70')
+    enddate_label.configure(text=f'End date: {enddate}', text_color='#04033A')
 
 
 # tkinter program
 root = CTk() # initializing window
 root.geometry('800x600') # setting size
-set_appearance_mode('dark') # can also be light
+set_appearance_mode('light') # can also be light
 
 # declaring string variable for storing MRID and interval- defining as a string?
 market_type_var=tk.StringVar() 
@@ -196,26 +196,26 @@ startdate = None # initializing
 enddate = None
 
 # widgets
-MRID_label = CTkLabel(root, text = 'Market Type:', font=('Arial',20, 'bold'), text_color='#FFCC70')
+MRID_label = CTkLabel(root, text = 'Market Type:', font=('Arial',20, 'bold'), text_color='#04033A')
 MRIDDropdown = CTkComboBox(master=root, values=['DAM', 'RTM', 'HASP', 'RTPD'])
  
-intvl_label = CTkLabel(root, text = 'Interval:', font = ('Arial',20,'bold'), text_color='#FFCC70')
+intvl_label = CTkLabel(root, text = 'Interval:', font = ('Arial',20,'bold'), text_color='#04033A')
 intvlDropdown = CTkComboBox(master=root, values=['5','10','15','60','quarterly'])
 
 cal = Calendar(root, selectmode ='day',
             year=2024, month =1, # defaults
             day = 1)
 
-chooseStartDate = CTkButton(root, text='Choose Start Date', command=findStartDate, corner_radius=32,fg_color='#C850C0', hover_color='#4158D0')
-chooseEndDate = CTkButton(root, text='Choose End Date', command=findEndDate, corner_radius=32,fg_color='#C850C0', hover_color='#4158D0')
+chooseStartDate = CTkButton(root, text='Choose Start Date', command=findStartDate, corner_radius=32,fg_color='#162157', hover_color='#6D7DCF')
+chooseEndDate = CTkButton(root, text='Choose End Date', command=findEndDate, corner_radius=32,fg_color='#162157', hover_color='#6D7DCF')
 
-startdate_label = CTkLabel(root, text= 'Start Date: ', font=('Arial',20), text_color='#FFCC70') 
-enddate_label = CTkLabel(root, text='End Date: ', font=('Arial',20), text_color='#FFCC70')
+startdate_label = CTkLabel(root, text= 'Start Date: ', font=('Arial',20), text_color='#04033A') 
+enddate_label = CTkLabel(root, text='End Date: ', font=('Arial',20), text_color='#04033A')
 
 
-sptieCheckBox = CTkCheckBox(master=root, text='Do you want SPTIE data?', fg_color='#C850C0', corner_radius=36)
+sptieCheckBox = CTkCheckBox(master=root, text='Do you want SPTIE data?', fg_color='#162157', corner_radius=36)
 
-sub_btn=CTkButton(master=root,text = 'Submit', command = submit, corner_radius=32,fg_color='#C850C0', hover_color='#4158D0') # submit is calling 'submit' function (gets user inputs)
+sub_btn=CTkButton(master=root,text = 'Submit', command = submit, corner_radius=32,fg_color='#162157', hover_color='#6D7DCF') # submit is calling 'submit' function (gets user inputs)
 
 # grid 
 cal.grid(row=0,column=0)

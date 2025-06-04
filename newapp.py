@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, ttk
 from tkinter import *
 from tkcalendar import Calendar
 from customtkinter import *
@@ -14,6 +14,7 @@ import time
 def backend(market_run_id, interval, startdate, enddate, sptie): # actually pulls data
     # API Calling Function
     def pull_request(startdate, enddate): # remove queryname later
+        node=node_var.get()
         startdate = int(startdate.strftime('%Y%m%d')) # updating date format
         enddate = int(enddate.strftime('%Y%m%d'))
         url = "http://oasis.caiso.com/oasisapi/SingleZip"
@@ -181,7 +182,7 @@ def findEndDate(): # need to alter so I can choose start and end date with same 
     enddate = cal.get_date()
     enddate_label.config(text=f'End date: {enddate}')
 
-def select_output_file():
+def select_output_file(): # still not working:(
     global output_file_path
     directory = filedialog.askdirectory(title='Select output directory')
     if directory:
@@ -198,6 +199,7 @@ root.geometry("800x600")# setting the windows size
 market_type_var=tk.StringVar() 
 interval_var=tk.StringVar()
 sptie_var=tk.StringVar()
+node_var=tk.StringVar()
 
 startdate = None # initializing
 enddate = None
@@ -221,6 +223,21 @@ chooseEndDate = Button(root, text='Choose End Date', command=findEndDate)
 startdate_label = tk.Label(root, text= 'Start Date: ') 
 enddate_label = tk.Label(root, text='End Date: ')
 
+node_label = tk.Label(root, text='Node(s)')
+node_entry = tk.Entry(root, textvariable = node_var, font=('calibre', 10))
+
+# def show():
+#     lbl.config(text=cb.get())
+
+# # Dropdown options  
+# a = ["node1", "node2", "node3", "node4", "node5"]
+
+# # Combobox  
+# cb = ttk.Combobox(root, values=a)
+# cb.set("Select node(s)")
+# lbl = Label(root, text=" ")
+# lbl.grid(row=7,column=2)
+
 sptie_label = tk.Label(root, text='Do you want SPTIE data? (Y/N): ', font=('calibre',10))
 sptie_entry = tk.Entry(root,textvariable = sptie_var, font=('calibre',10))
 
@@ -237,7 +254,10 @@ MRID_label.grid(row=1, column=1)
 intvl_label.grid(row=2,column=1)
 MRID_entry.grid(row=1, column=2)
 intvl_entry.grid(row=2, column=2)
-sub_btn.grid(row=3,column=2)
+node_label.grid(row=5, column=1)
+node_entry.grid(row=5,column=2)
+# cb.grid(row=6,column=1)
+sub_btn.grid(row=6,column=2)
 MRIDoptions_label.grid(row=1,column=3)
 intvloptions_label.grid(row=2,column=3)
 startdate_label.grid(row=3, column=1)

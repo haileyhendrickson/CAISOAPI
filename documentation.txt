@@ -86,7 +86,7 @@ Fun app:
 
 Tomorrow:
 - make fun app pretty and useable (much nicer)
-- add node options (including dropdown!:) 
+- add node options (including dropdown!:) might be impossible (or incredibly time consuming if i have to copy each node name (per report))
 - fix file download part, too
 - chat with zoey about how to make it so people just open it up and it downloads in the background or smthn
 
