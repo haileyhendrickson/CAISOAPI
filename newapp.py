@@ -13,8 +13,8 @@ import time
 # all the functions
 def backend(market_run_id, interval, startdate, enddate, sptie): # actually pulls data
     # API Calling Function
+    node=node_var.get()
     def pull_request(startdate, enddate): # remove queryname later
-        node=node_var.get()
         startdate = int(startdate.strftime('%Y%m%d')) # updating date format
         enddate = int(enddate.strftime('%Y%m%d'))
         url = "http://oasis.caiso.com/oasisapi/SingleZip"
@@ -55,7 +55,7 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
                             files.append(f'pull#{counter}.csv') 
         except Exception as e: 
             print(f"Error message: {e}")
-        
+
     # cleaning function!
     def cleanFile(filename):
         df = pd.read_csv(filename) # reading in file
@@ -108,6 +108,8 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
     difference = enddate - startdate # counts days in between
     days = difference.days # making a counter for my loop bc .days is readonly
 
+
+
     files = [] # creating an empty list for my files
     df_list = []
     counter = 0 # initializing, probably delete later
@@ -134,45 +136,36 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
         conditional_drop = [col for col in cond_drop if col in df_combined.columns]
         df_combined = df_combined.drop(columns=conditional_drop)
         df_combined = df_combined.drop_duplicates() # dropping duplicate rows
-        df_combined.to_csv(f'combinedFileFor{startdate}To{enddate}.csv', index=False)
-        root.after(3000, root.destroy) # quits 3 seconds after finishing
+        df_combined.to_csv(f'{output_file_path}/{market_run_id}-{interval}mins-{node}for{startdate}to{enddate}.csv', index=False)
+        # root.after(3000, root.destroy) # quits 3 seconds after finishing
 
     if difference.days <= 30:
         print(f'Pulling data for {startdate} to {enddate}.')
         pull_request(startdate, enddate)
         cleanFile('pull#0.csv')
-        print('Done.')
-        root.after(3000, root.destroy) # quits 3 seconds after finishing
+        df = pd.read_csv('pull#0.csv')
+        df.to_csv(f'{output_file_path}/{market_run_id}-{interval}mins-{node}for{startdate}to{enddate}.csv', index=False)
+        print('Finished!')
+        # root.after(3000, root.destroy) # quits 3 seconds after finishing
 
 # button functions
 def submit(): # handles user inputs and checks for SPTIE
+    finished_label = tk.Label(root, text=f'')
     market_run_id=market_type_var.get()
     interval=interval_var.get()
+    # sptie=sptie_var.get()
+
+    market_run_id = market_run_id.upper()
 
     if interval != 'quarterly':
         interval = int(interval) # changing to an int if not quarterly
-
-    if (market_run_id == 'DAM' and interval == 60) or (market_run_id =='RTM' and interval == 10):
-        sptie_label.grid(row=5, column=1)
-        sptie_entry.grid(row=5,column=2)
-    else:
-        sptie_var.set('N') # default to no SPTIE if there isn't an option for SPTIE
-        sptie_label.grid_remove()
-        sptie_entry.grid_remove()
     
-
-    sptie_choice = tk.Button(root, text='Pull Data', command=lambda: pullmydata(market_run_id, interval, startdate, enddate))
-    sptie_choice.grid(row=6,column=2)
+    finished_label = tk.Label(root, text=f'Finished!')
+    finished_label.grid(row=9,column=1)
+    backend(market_run_id, interval, startdate, enddate, sptie)
 
     market_type_var.set("") # not sure what these are here for
     interval_var.set("")
-
-def pullmydata(market_run_id, interval, startdate, enddate): # final button to pull and create the file
-    sptie=sptie_var.get()
-    finished_label = tk.Label(root, text=f'Finished!')
-    finished_label.grid(row=9,column=1)
-    backend(market_run_id, interval, startdate, enddate, sptie) # need to add node
-
 
 def findStartDate(): # need to alter so I can choose start and end date with same calendar
     global startdate
@@ -184,7 +177,7 @@ def findEndDate(): # need to alter so I can choose start and end date with same 
     enddate = cal.get_date()
     enddate_label.config(text=f'End date: {enddate}')
 
-def select_output_file(): # still not working:(
+def select_output_file(): 
     global output_file_path
     directory = filedialog.askdirectory(title='Select output directory')
     if directory:
@@ -193,6 +186,13 @@ def select_output_file(): # still not working:(
     else:
         output_file_label.config(text='No directory selected yet')
 
+def sptie_toggle():
+    global sptie
+    if sptie_var.get()=='Y': # selected
+        sptie = 'Y'
+    else:
+        sptie = 'N'
+
 # tkinter program
 root=tk.Tk() # opening/initializing program
 root.geometry("800x600")# setting the windows size
@@ -200,7 +200,7 @@ root.geometry("800x600")# setting the windows size
 # declaring string variable for storing MRID and interval- defining as a string?
 market_type_var=tk.StringVar() 
 interval_var=tk.StringVar()
-sptie_var=tk.StringVar()
+sptie_var=tk.StringVar(value='N')
 node_var=tk.StringVar()
 
 startdate = None # initializing
@@ -209,11 +209,11 @@ enddate = None
 # widgets
 MRID_label = tk.Label(root, text = 'Market Type:', font=('calibre',10, 'bold'))
 MRID_entry = tk.Entry(root,textvariable = market_type_var, font=('calibre',10,'normal'))
-MRIDoptions_label = tk.Label(root, text='DAM, RTM, HASP, or RTPD', font=('calibre',10))
+# MRIDoptions_label = tk.Label(root, text='DAM, RTM, HASP, or RTPD', font=('calibre',10))
  
 intvl_label = tk.Label(root, text = 'Interval:', font = ('calibre',10,'bold'))
 intvl_entry = tk.Entry(root, textvariable = interval_var, font = ('calibre',10,'normal'))
-intvloptions_label = tk.Label(root, text='5, 10, 15, 60, quarterly', font=('calibre',10))
+# intvloptions_label = tk.Label(root, text='5, 10, 15, 60, quarterly', font=('calibre',10))
 
 cal = Calendar(root, selectmode ='day',
             year=2024, month =1, # defaults
@@ -228,20 +228,7 @@ enddate_label = tk.Label(root, text='End Date: ')
 node_label = tk.Label(root, text='Node(s)')
 node_entry = tk.Entry(root, textvariable = node_var, font=('calibre', 10))
 
-# def show():
-#     lbl.config(text=cb.get())
-
-# # Dropdown options  
-# a = ["node1", "node2", "node3", "node4", "node5"]
-
-# # Combobox  
-# cb = ttk.Combobox(root, values=a)
-# cb.set("Select node(s)")
-# lbl = Label(root, text=" ")
-# lbl.grid(row=7,column=2)
-
-sptie_label = tk.Label(root, text='Do you want SPTIE data? (Y/N): ', font=('calibre',10))
-sptie_entry = tk.Entry(root,textvariable = sptie_var, font=('calibre',10))
+sptiecheckbox = tk.Checkbutton(root, text= 'SPTIE?', variable=sptie_var, offvalue='N', onvalue='Y', command=sptie_toggle)
 
 sub_btn=tk.Button(root,text = 'Submit', command = submit) # submit is calling 'submit' function (gets user inputs)
 
@@ -258,14 +245,11 @@ MRID_entry.grid(row=1, column=2)
 intvl_entry.grid(row=2, column=2)
 node_label.grid(row=5, column=1)
 node_entry.grid(row=5,column=2)
-# cb.grid(row=6,column=1)
 sub_btn.grid(row=6,column=2)
-MRIDoptions_label.grid(row=1,column=3)
-intvloptions_label.grid(row=2,column=3)
+sptiecheckbox.grid(row=1,column=3)
 startdate_label.grid(row=3, column=1)
 enddate_label.grid(row=4, column=1)
 output_file_button.grid(row=4, column=0)
 output_file_label.grid(row=5, column=0)
-
 
 root.mainloop() # performing an infinite loop for the window to display

@@ -85,15 +85,16 @@ Fun app:
 - user inputs aren't working correctly
 - make fun app pretty and useable (much nicer)
 
-Tomorrow:
-- fix file download part, too (ask zoe for help)
+Basic tkinter:
 - chat with zoey about how to make it so people just open it up and it downloads in the background or smthn
 
 
 6/4-
+Zoe told me that no one uses the contingency dispatch reports, so I can delete them if I want. I might leave it 
+bc at this point there is too much to delete with that without risking deleting other important stuff
 Tested and confirmed: PRC_LMP, PRC_SPTIE_LMP, PRC_SPTIE_LMP, PRC_HASP_LMP, PRC_RTPD_LMP, PRC_DS_REF, PRC_CD_INTVL_LMP, PRC_RTM_LAP
 Issues: PRC_CD_SPTIE_LMP (techically runs, but there isn't data to pull?) 
-
+Fixed bugs related to SPTIE and make it so that you can run multiple reports without closing the window. hype.
 
 test nodes: C7-1-S1_1_N002 , 0096WD_7_N001
 sptie nodes: AMARGOSA_1_SN001
