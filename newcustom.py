@@ -139,6 +139,9 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
         df_combined = df_combined.drop_duplicates() # dropping duplicate rows
         df_combined.to_csv(f'{output_file_path}/{market_run_id}-{interval}mins-{node}for{startdate}to{enddate}.csv', index=False)
         # root.after(3000, root.destroy) # quits 3 seconds after finishing
+        status_lbl.configure(text='Finished!')
+        root.update()
+
 
     if difference.days <= 30:
         print(f'Pulling data for {startdate} to {enddate}.')
@@ -147,21 +150,23 @@ def backend(market_run_id, interval, startdate, enddate, sptie): # actually pull
         df = pd.read_csv('pull#0.csv')
         df.to_csv(f'{output_file_path}/{market_run_id}-{interval}mins-{node}for{startdate}to{enddate}.csv', index=False)
         # root.after(3000, root.destroy) # quits 3 seconds after finishing
-
+        status_lbl.configure(text='Finished!')
+        root.update()
+    
 # button functions
 def submit(): # handles user inputs and checks for SPTIE
-    finished_label = tk.Label(root, text=f'')
+    status_lbl.configure(text='Running...')
+    root.update()
     market_run_id=MRIDDropdown.get()
     interval=intvlDropdown.get()
-
+        
     market_run_id = market_run_id.upper()
 
     if interval != 'quarterly':
         interval = int(interval) # changing to an int if not quarterly
     
-    # finished_label = tk.Label(root, text=f'Finished!', font=('Arial',20), text_color='#04033A')
-    # finished_label.grid(row=9,column=1)
     backend(market_run_id, interval, startdate, enddate, sptie)
+
 
 def findStartDate(): # need to alter so I can choose start and end date with same calendar
     global startdate
@@ -229,9 +234,8 @@ sub_btn=CTkButton(master=root,text = 'Submit', command = submit, corner_radius=3
 output_file_button = CTkButton(root, text='Select Output File Path', command=select_output_file, corner_radius=32,fg_color='#162157', hover_color='#6D7DCF')
 output_file_label = CTkLabel(root, text='No file selected yet', font=('Arial',10), text_color='#04033A')
 
-# progressbar = CTkProgressBar(master=root, progress_color="#22E932", fg_color="#A8A8AD", mode='determinate', )
-# progressbar.set(0)
-
+status_lbl = CTkLabel(root, text='', font=('Arial',10), text_color='#04033A')
+status_lbl.grid(row=7,column=1) 
 
 # grid 
 cal.grid(row=0,column=0)
@@ -249,6 +253,6 @@ startdate_label.grid(row=4, column=1)
 enddate_label.grid(row=5, column=1)
 output_file_button.grid(row=4, column=0)
 output_file_label.grid(row=5, column=0)
-# progressbar.grid(row=0, column=2)
+
 
 root.mainloop() # performing an infinite loop for the window to display

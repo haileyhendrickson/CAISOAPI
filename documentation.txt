@@ -89,7 +89,7 @@ Fixed bugs related to SPTIE and make it so that you can run multiple reports wit
 
 to do tkinter:
 - chat with zoey about how to make it so people just open it up and it downloads in the background or smthn
-- make a progress bar?
+- make a progress bar? Wouldn't be super helpful because it isn't a set time that runs. I can add in a "running" widget instead.
 
 
 
