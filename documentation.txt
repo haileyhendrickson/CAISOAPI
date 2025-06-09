@@ -87,9 +87,12 @@ Tested and confirmed: PRC_LMP, PRC_SPTIE_LMP, PRC_SPTIE_LMP, PRC_HASP_LMP, PRC_R
 Issues: PRC_CD_SPTIE_LMP (techically runs, but there isn't data to pull?) 
 Fixed bugs related to SPTIE and make it so that you can run multiple reports without closing the window. hype.
 
-to do tkinter:
-- chat with zoey about how to make it so people just open it up and it downloads in the background or smthn
-- make a progress bar? Wouldn't be super helpful because it isn't a set time that runs. I can add in a "running" widget instead.
+6/6-
+Made it possible to download multiple reports without reopening program.
+Added "status" label.
+
+6/9-
+Updating documentation, comments, general code cleaning
 
 
 

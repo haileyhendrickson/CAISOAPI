@@ -1,3 +1,5 @@
+A compilation of notes about CAISO OASIS API, specifically for Prices. 
+
 FOR QUERYING:
 url = 'http://oasis.caiso.com/oasisapi/SingleZip' ALWAYS THIS
 startdate = yyyymmdd format, no dashes
@@ -6,53 +8,24 @@ enddate = yyyymmdd format, no dashes
 endtime = hr:mn (00:00)
 queryname = specifies the kind of report wanted. EX: 'PRC_LMP' for hourly locational marginal prices
 marketRunID = specifies the type of market (DAM or RTM, HASP), RTPD
+version = version, some report types require an updated version number Can be found in specification folders.
 
-QUERY NAME OPTIONS:
-- PRC_LMP : Locational Marginal Prices (works, mostly)
+PRICES QUERY NAME OPTIONS:
+- PRC_LMP : Locational Marginal Prices
     DAM, 60 mins, 
-- PRC_SPTIE_LMP : Interval, FMM, Scheduling Point/Tie Combination Locational Marginal Prices (doesn't print all of the files, just some)
-    DAM, 60 mins, 
-- PRC_INTVL_LMP : Interval Locational Marginal Prices (works great! just slow)
+- PRC_SPTIE_LMP : Scheduling Point/Tie Combination Locational Marginal Prices 
+    DAM, 60 mins, uses a different set of nodes (an aggregated kind)
+- PRC_INTVL_LMP : Interval Locational Marginal Prices 
     RTM, 5 mins,
-- PRC_HASP_LMP : HASP Locational Marginal Prices (works great, just slow)
-    HASP (hour ahead), 15 mins, 
-- PRC_RTPD_LMP : FMM Locational Marginal Prices (works, just slow)
+- PRC_HASP_LMP : HASP Locational Marginal Prices 
+    HASP (hour ahead), 15 mins,
+- PRC_RTPD_LMP : FMM Locational Marginal Prices 
     RTPD (real time pre-dispatch), 15 mins
-- PRC_DS_REF : Reference Prices (prints the first file, can't figure it out after that. watch nodes)
-    N/A market, quarterly
-- PRC_CD_INTVL_LMP : Contingency Dispatch Locational Marginal Prices (only printed a few lines, but it breaks after 1 file)
+- PRC_DS_REF : Reference Prices 
+    No market, quarterly interval, might be a different set of nodes
+- PRC_CD_INTVL_LMP : Contingency Dispatch Locational Marginal Prices 
     RTM, 10 mins
-- PRC_CD_SPTIE_LMP: Contingency Dispatch Scheduling Point/Tie Combination Locational Marginal Prices (haven't figured out, requres specific nodes and dates I think)
-    RTM, 10 mins
-- PRC_RTM_LAP : Hourly RTM LAP Prices (couldn't get it to work. probably specific node types or something)
-    RTM, 60
--- Group ones: Hourly Energy Price Shaping Factor (not including unless requested)
-
-CSV: Depends on the Query Name
-PRC_INTVL_LMP
-- 'NODE_ID_XML': node ID
-- 'NODE_ID': node ID
-- 'NODE': node ID
-- 'LMP_TYPE': MCC= Congestion, MCE= Energy, MCL= Loss, LMP= LMP IDK?
-- 'PNODE_RESMRID':  node ID
-- 'GRP_TYPE': group type. OPTIONS? I think this has to do with the nodes. (ap vs all nodes). grp_type=ALL_APNODES to request my data which returned only the APNodes. Instead I used grp_type=ALL which returns the nodes that can be found on their price map as well as the APNode
-- 'POS'
-
-Codes containing 'REN' (renewables)
-- 'RENEWABLE_TYPE': type of renewable, ex: solar, wind
-- 'TRADING_HUB':
-- 'LABEL': Like the title of the data pull? 
-- 'MARKET_RUN_ID_POS': code for market run ID?
-- 'RENEW_POS': code for renewable type?
-
-ALL CODES 
-- 'INTERVALSTARTTIME_GMT': interval start  in GMT - happens in 5 minute intervals for this query type
-- 'INTERVALENDTIME_GMT': interval end time in GMT
-- 'OPR_DT': operation date
-- 'OPR_HR':
-- 'XML_DATA_ITEM': includes LMP type, and part of query name
-- 'MARKET_RUN_ID': type of market (inputted by user) (DAM, RUC, etc)
-- 'GROUP'
-- 'MW': megawats? This could be the price?
-- 'OPR_INTERVAL': a numerical code for what time interval it is (1 for 0:00, 2 for 15:00, etc)
-
+- PRC_CD_SPTIE_LMP: Contingency Dispatch Scheduling Point/Tie Combination Locational Marginal Prices 
+    RTM, 10 mins, uses a different set of nodes (an aggregated kind)
+- PRC_RTM_LAP : Hourly RTM LAP Prices 
+    RTM, 60, doesn't use all the standard nodes, might be a different set
