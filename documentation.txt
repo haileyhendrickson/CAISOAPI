@@ -98,10 +98,10 @@ Added reportname label.
 Switched the user input to be only market type, limited the number of available reports to pull. (per John's request)
 Now saves as an excel file, not a csv, also changed file name to include timestamp
 Filtered columns, rounded prices to 4 decimal places, split dates in to separate columns
+Pivoted the LMP_TYPE column for readability, per Zoe's request
 
 
 TO DO: (bruh)
 - add hourly average data as a separate sheet (if the box is checked)
-- pivot table for excel file (later, get zoe's help)
 
 - final step: pyinstaller gui.py (bash command)

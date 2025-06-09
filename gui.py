@@ -60,7 +60,7 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         df['MW'] = df['MW'].round(4)
         df[['Year', 'Month','Day']] = df['INTERVALSTARTTIME_GMT'].str.split('-',expand=True)
         df[['Day', 'Time']] = df['Day'].str.split(' ',expand=True)
-        df[['Hour','Minute', 'Second']] = df['Time'].str.split(':',expand=True)
+        df[['Hour','Minute', 'Seconds']] = df['Time'].str.split(':',expand=True)
         df = df.drop(columns=['Time', 'Seconds'])
         df.to_csv(filename) # should replace file with cleaned version
 
@@ -108,7 +108,9 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         conditional_drop = [col for col in cond_drop if col in df_combined.columns]
         df_combined = df_combined.drop(columns=conditional_drop)
         df_combined = df_combined.drop_duplicates() # dropping duplicate 
-        df_combined.to_excel(f'{output_file_path}/{market_run_id} pulled {timestamp}.xlsx', index=False)
+        df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+        df_combined = df_combined.reset_index()
+        df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)
         # root.after(3000, root.destroy) # quits 3 seconds after finishing
         status_lbl.configure(text='Finished!')
         root.update()
@@ -118,7 +120,9 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         pull_request(startdate, enddate)
         cleanFile('pull#0.csv')
         df = pd.read_csv('pull#0.csv')
-        df.to_excel(f'{output_file_path}/{market_run_id} pulled {timestamp}.xlsx', index=False)        
+        df = pd.pivot_table(df, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+        df = df.reset_index()
+        df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)        
         # root.after(3000, root.destroy) # quits 3 seconds after finishing
         status_lbl.configure(text='Finished!')
         root.update()

@@ -142,3 +142,7 @@
 # timestamp = timestamp.strftime('%m-%d-%Y %H:%M')
 # print(timestamp)
 
+import pandas as pd
+df = pd.read_excel('TEST FOLDER\DAMPULLED06-09-2025 1444.xlsx')
+print(df.head())
+pivot = pd.pivot_table(df, values='MW', index='INTERVALSTARTDATE_GMT', columns='LMP_TYPE')
