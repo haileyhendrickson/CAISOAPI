@@ -27,5 +27,13 @@ PRICES QUERY NAME OPTIONS:
     RTM, 10 mins
 - PRC_CD_SPTIE_LMP: Contingency Dispatch Scheduling Point/Tie Combination Locational Marginal Prices 
     RTM, 10 mins, uses a different set of nodes (an aggregated kind)
+    Had issues running with my testing, as I didn't have the knowledge of applicable date ranges and nodes.
 - PRC_RTM_LAP : Hourly RTM LAP Prices 
     RTM, 60, doesn't use all the standard nodes, might be a different set
+
+
+Example Nodes (used for testing)
+standard nodes: C7-1-S1_1_N002 , 0096WD_7_N001
+sptie nodes: AMARGOSA_1_SN001
+PRC_DC_REF prices: BELRIDGE_1_N001
+RTM_LAP: CLAP_AEPCO-APND

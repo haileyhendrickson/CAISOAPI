@@ -132,7 +132,13 @@
 # df['EFF_QTR_START_DT'] = df['EFF_QTR_START_DT'].str.replace(':00-00:00', '').str.replace('T', ' ') # getting rid of seconds
 # df['EFF_QTR_END_DT'] = df['EFF_QTR_END_DT'].str.replace(':00-00:00','').str.replace('T',' ') # getting rid of seconds
 
-import pandas as pd
-import numpy 
-df = pd.read_csv('pull#2.csv')
-print(df.columns)
+# import pandas as pd
+# import numpy 
+# df = pd.read_csv('pull#2.csv')
+# print(df.columns)
+
+# import datetime
+# timestamp = datetime.datetime.now()
+# timestamp = timestamp.strftime('%m-%d-%Y %H:%M')
+# print(timestamp)
+

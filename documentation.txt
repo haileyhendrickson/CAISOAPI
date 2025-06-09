@@ -90,13 +90,18 @@ Fixed bugs related to SPTIE and make it so that you can run multiple reports wit
 6/6-
 Made it possible to download multiple reports without reopening program.
 Added "status" label.
+Figured out how to use pyinstaller to send the program to people without python. Awesome!
 
 6/9-
-Updating documentation, comments, general code cleaning
+Updating documentation, comments, general code cleaning.
+Added reportname label.
+Switched the user input to be only market type, limited the number of available reports to pull. (per John's request)
+Now saves as an excel file, not a csv, also changed file name to include timestamp
+Filtered columns, rounded prices to 4 decimal places, split dates in to separate columns
 
 
+TO DO: (bruh)
+- add hourly average data as a separate sheet (if the box is checked)
+- pivot table for excel file (later, get zoe's help)
 
-test nodes: C7-1-S1_1_N002 , 0096WD_7_N001
-sptie nodes: AMARGOSA_1_SN001
-reference prices: BELRIDGE_1_N001
-RTM_LAP: CLAP_AEPCO-APND
+- final step: pyinstaller gui.py (bash command)

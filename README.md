@@ -1,12 +1,13 @@
-# CAISOAPI
-CAISO API program
+# CAISOAPI PROGRAM
 
 Internship project, creating a program to pull various price reports from the CAISO OASIS API (oasis.caiso.com). Purpose of the program is for simplified and more efficient data pulling for consultants and analysts at Energy Strategies.
 
 Installation
-(put instructions here)
+Find dist folder and navigate to gui.exe
+Don't worry about black terminal, it will run in the background.
+The GUI/Program will automatically pop up, and you can input your desired report variables.
 
-For GUI: use gui.py
+For GUI: use gui.py, or gui.exe if python libraries and extensions are not installed
 Backend code: backend.py
 Detailed documentation: documentation.txt (includes daily log and processes)
 Data dictionary: Notes about each report type under the 'prices' tab at the CASIO OASIS site. 
