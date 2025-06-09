@@ -103,5 +103,10 @@ Pivoted the LMP_TYPE column for readability, per Zoe's request
 
 TO DO: (bruh)
 - add hourly average data as a separate sheet (if the box is checked)
+    RTM has different column names (makes pivoting difficult.)
+    DAM: MW
+    RTM: VALUE - needs a different cleaning program completely
+    HASP: MW - can group by hour and then find the average. not sure where to put that
+    FFM: PRC - needs a different cleaning program completely
 
 - final step: pyinstaller gui.py (bash command)

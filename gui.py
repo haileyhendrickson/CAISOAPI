@@ -111,7 +111,6 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
         df_combined = df_combined.reset_index()
         df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)
-        # root.after(3000, root.destroy) # quits 3 seconds after finishing
         status_lbl.configure(text='Finished!')
         root.update()
 
@@ -123,10 +122,15 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         df = pd.pivot_table(df, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
         df = df.reset_index()
         df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)        
-        # root.after(3000, root.destroy) # quits 3 seconds after finishing
         status_lbl.configure(text='Finished!')
         root.update()
+
+def hourly_average(filename): # creating a new file for hourly averages
+    df = pd.read_excel(filename)
+    grouped_avg = df.groupby('Hour', as_index=False)['MW'].mean()
+    return grouped_avg
     
+   
 # button functions
 def submit(): # runs all of the backend code
     status_lbl.configure(text='Running...')
