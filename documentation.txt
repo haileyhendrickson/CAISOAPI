@@ -104,8 +104,10 @@ Pivoted the LMP_TYPE column for readability, per Zoe's request
 Working on adding the hourly average sheet. It is complicated, because each report type has a different column 
 name for price, making pivoting and such difficult.
 Tested with hourly averages for all 4 report types and got them working.
+Sent to Jason and Justin for feedback!
 
 potential issues:
+- not in MST, but in GMT. It is labeled. 
 - DAM still adds the hourly avg, but its the same data. 
 - Might want button for hourly averages
 

@@ -3,10 +3,16 @@
 Internship project, creating a program to pull various price reports from the CAISO OASIS API (oasis.caiso.com). Purpose of the program is for simplified and more efficient data pulling for consultants and analysts at Energy Strategies.
 
 Installation
+Download gui.exe to your local machine, and click to open.
 Find dist folder and navigate to gui.exe
-Don't worry about black terminal, it will run in the background.
-The GUI/Program will automatically pop up, and you can input your desired report variables.
+The GUI/Program will open, and you can input your desired report variables.
+The excel file with the report will automatically generate in your chosen file destination once finished.
 
+Notes for use:
+- Set in GMT (Greenwich time).
+- Each requested report will include the actual report, and the hourly averages. (DAM will be the same, as it is already an hourly report).
+
+File in GitHub:
 For GUI: use gui.py, or gui.exe if python libraries and extensions are not installed
 Backend code: backend.py
 Detailed documentation: documentation.txt (includes daily log and processes)

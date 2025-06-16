@@ -22,8 +22,8 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         params = {
             "resultformat": 6, # should always be this- creates a CSV
             "queryname": queryname, # locational marginal prices
-            "startdatetime": f'{startdate}T08:00-0000', 
-            "enddatetime": f'{enddate}T08:00-0000', 
+            "startdatetime": f'{startdate}T00:00-0000', 
+            "enddatetime": f'{enddate}T00:00-0000', 
             "market_run_id": market_run_id,
             "version": version,  
             "node": node,
@@ -64,7 +64,7 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
             df['PRC'] = df['PRC'].round(4)
         df[['Year', 'Month','Day']] = df['INTERVALSTARTTIME_GMT'].str.split('-',expand=True)
         df[['Day', 'Time']] = df['Day'].str.split(' ',expand=True)
-        df[['Hour','Minute', 'Seconds']] = df['Time'].str.split(':',expand=True)
+        df[['Hour (GMT)','Minute', 'Seconds']] = df['Time'].str.split(':',expand=True)
         df = df.drop(columns=['Time', 'Seconds'])
         df.to_csv(filename) # should replace file with cleaned version
 
@@ -72,9 +72,9 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
     def hourly_average(filename): # creating a new file for hourly averages
         df = pd.read_excel(filename)
         if market_run_id == 'HASP': # doesn't have greenhouse gas
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean()
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean()
         else:
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean()
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean()
 
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer:
             df_avg.to_excel(writer, sheet_name='Hourly Average', index=False)
