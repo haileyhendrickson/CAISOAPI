@@ -100,13 +100,13 @@ Now saves as an excel file, not a csv, also changed file name to include timesta
 Filtered columns, rounded prices to 4 decimal places, split dates in to separate columns
 Pivoted the LMP_TYPE column for readability, per Zoe's request
 
+6/16-
+Working on adding the hourly average sheet. It is complicated, because each report type has a different column 
+name for price, making pivoting and such difficult.
+Tested with hourly averages for all 4 report types and got them working.
 
-TO DO: (bruh)
-- add hourly average data as a separate sheet (if the box is checked)
-    RTM has different column names (makes pivoting difficult.)
-    DAM: MW
-    RTM: VALUE - needs a different cleaning program completely
-    HASP: MW - can group by hour and then find the average. not sure where to put that
-    FFM: PRC - needs a different cleaning program completely
+potential issues:
+- DAM still adds the hourly avg, but its the same data. 
+- Might want button for hourly averages
 
 - final step: pyinstaller gui.py (bash command)

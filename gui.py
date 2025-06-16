@@ -47,7 +47,6 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
     # cleaning function!
     def cleanFile(filename):
         df = pd.read_csv(filename) # reading in file
-
         all_drop = ['NODE_ID_XML', 'NODE_ID', 'PNODE_RESMRID', 'OPR_DT', 'OPR_HR', 'OPR_INTERVAL', 'XML_DATA_ITEM', 'POS', 'GROUP', 'GRP_TYPE', 'MARKET_RUN_ID', 'Unnamed: 0', 'INTERVAL_START_TIME']
         valid_columns = [col for col in all_drop if col in df.columns]
         df = df.drop(columns=valid_columns)
@@ -57,12 +56,28 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         # conditional cleaning
         if 'LMP_TYPE' in df.columns:
                 df['LMP_TYPE'] = df['LMP_TYPE'].replace({'LMP': 'LMP', 'MCC': 'Congestion', 'MCE':'Energy', 'MCL': 'Loss', 'MGHG': 'Greenhouse Gas'})
-        df['MW'] = df['MW'].round(4)
+        if 'MW' in df.columns:
+            df['MW'] = df['MW'].round(4)
+        if 'VALUE' in df.columns:
+            df['VALUE'] = df['VALUE'].round(4)
+        if 'PRC' in df.columns:
+            df['PRC'] = df['PRC'].round(4)
         df[['Year', 'Month','Day']] = df['INTERVALSTARTTIME_GMT'].str.split('-',expand=True)
         df[['Day', 'Time']] = df['Day'].str.split(' ',expand=True)
         df[['Hour','Minute', 'Seconds']] = df['Time'].str.split(':',expand=True)
         df = df.drop(columns=['Time', 'Seconds'])
         df.to_csv(filename) # should replace file with cleaned version
+
+    # hourly average function
+    def hourly_average(filename): # creating a new file for hourly averages
+        df = pd.read_excel(filename)
+        if market_run_id == 'HASP': # doesn't have greenhouse gas
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean()
+        else:
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean()
+
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer:
+            df_avg.to_excel(writer, sheet_name='Hourly Average', index=False)
 
     # user inputs map
     map = {
@@ -108,9 +123,15 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         conditional_drop = [col for col in cond_drop if col in df_combined.columns]
         df_combined = df_combined.drop(columns=conditional_drop)
         df_combined = df_combined.drop_duplicates() # dropping duplicate 
-        df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+        if 'MW' in df_combined.columns: # this one will do nothing for the DAM pull, except maybe make a duplicate page
+            df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+        if 'VALUE' in df_combined.columns:
+            df_combined = pd.pivot_table(df_combined, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+        if 'PRC' in df_combined.columns:
+            df_combined = pd.pivot_table(df_combined, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
         df_combined = df_combined.reset_index()
         df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)
+        hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
         status_lbl.configure(text='Finished!')
         root.update()
 
@@ -119,17 +140,18 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         pull_request(startdate, enddate)
         cleanFile('pull#0.csv')
         df = pd.read_csv('pull#0.csv')
-        df = pd.pivot_table(df, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+        if 'MW' in df.columns: # this one will do nothing for the DAM pull
+            df = pd.pivot_table(df, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+        if 'VALUE' in df.columns:
+            df = pd.pivot_table(df, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+        if 'PRC' in df.columns:
+            df = pd.pivot_table(df, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
         df = df.reset_index()
-        df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)        
+        df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)    
+        hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')    
         status_lbl.configure(text='Finished!')
         root.update()
 
-def hourly_average(filename): # creating a new file for hourly averages
-    df = pd.read_excel(filename)
-    grouped_avg = df.groupby('Hour', as_index=False)['MW'].mean()
-    return grouped_avg
-    
    
 # button functions
 def submit(): # runs all of the backend code

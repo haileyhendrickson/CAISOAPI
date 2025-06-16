@@ -1,3 +1,5 @@
+# this is the old gui beause it has almost all of the report type options, instead of the main 4
+
 import tkinter as tk
 from tkinter import filedialog, ttk
 from tkinter import *
