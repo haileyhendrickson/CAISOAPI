@@ -10,7 +10,7 @@ Installation
 
 Notes for use:
 - Separate multiple nodes with a comma.
-- All times are set in GMT (Greenwich time).
+- All times are set in GMT.
 - Each requested report will include the actual report, and the hourly averages. (DAM will be the same, as it is already an hourly report).
 
 Files in GitHub:

@@ -10,14 +10,12 @@ it somehow specifies the type of report. Do analysts ask for the same type of re
 If the startdatetime and enddatetime have to specify a time, I will need to make an option of a "neutral" setting somehow (if statement)
 Got a basic query structure formatted that runs.
 
-
 5/21- 
 Different versions- more current/updated software I think. Version 1 is fine.
 figured out how to fix the parameter ordering issue! Pushed that and possibly deleted all my old pushes, oops 
 Zoe requested that I focus on all of the pulls that are under the ENERGY category, especially all the LMPs
 I think I have a pretty solid pull set up for now. Slightly tricky with switching between nodes and groups. (later learned no one asks for all nodes)
 Finished the basic structure of my API program allowing for user input. It has issues for sure, but it isn't horrible. 
-
 
 5/27-
 (troubleshooting query bugs)
@@ -28,20 +26,14 @@ Met with Zoe: got feedback on making code more efficient. Learned that people wi
 also learned that people don't know what type of report they want, they know the interval-market type. Slightly different.
 Restructred my 'map' to be searched by interval and market type. (More user friendly)
 
-
 5/28-
 Finished the bones of the beginning to end API call: from inputting start dates to a combined file for all dates (mostly just fixed the query limit issue)
 Figured out new way to call queryname using market and interval. The only issue is that there are a couple of duplicate report types. Not sure what the difference is or if they are necessary
-
 
 5/30-
 As I understand, nodes are individual points that have some sort of flow/transfer of energy through them (like from a plant or to a house)
 apnodes are aggregates of a group of nodes, and SPTie nodes are ones that connect with the grid not in CAISO boundaries
 Fixed pulling reference price data. needed a slightly different set of parameters
-
-Qs for Zoe (eventually):
-    - will I need to create dropdowns of lists of available nodes? That might pose an issue- different for each report type
-
 
 6/2-
 Added time.cleep(10) to try and avoid query limits, and it seems to have solved my issue of random chunks not pulling
@@ -50,8 +42,6 @@ Getting lost down a rabbit hole about PRC_CD_INTL_LMP. As far as I understand, t
 last minute after a change in load demand (like when a generator falls offline). My hypothesis was that those prices would be missing
 from the regular LMP report, or that the contingency prices would be much higher. However, I can't seem to figure out any sory of correlation.
 Managed to correctly pull a mostly clean version of each type of report! Woop woop!
-
-Next steps: talk to Jacob and Zoe about best methods for a gui (streamlit vs tkinter). ask about security issues?
 
 Rules/Notes for Pulling Reports:
 - PRC_LMP 
@@ -112,15 +102,15 @@ Met with Zoe, got last few cleaning things, and discusses future expansion for p
 Moved LMP column to the end of the row, renamed sheet 1.
 Deleted CSV from file where GUI is stored. 
 NOTE FOR CODE: Each report type has a different column name for price, so there is a lot of conditional cleaning added.
+I am supposed to be working on backfilling null values but I can't find any nulls to fill. Even tested the one from Zoe, and couldn't find any. (PALOVRDE_5_N101)
 
-- work on filling in missing data (get bad node from zoe- look at how pivot fills in mising info)
-- update documentation and code comments
-
+- work on filling in missing data (get bad node from zoe- pivot fills in data with ''- what I set.)
 
 - research SPP/MISO/ERCOT/NYIO/PJM data, if it has an API, similarities, etc
+    https://opensource.gridstatus.io/en/latest/Examples/spp/LMP%20Data.html 
 
 
-final steps:
+final steps: (These will need to be done every time changes are made to the gui)
 - destroy and rebuild gui with changes (for nodes, other)
--  pyinstaller --onefile --windowed gui.py (bash command)
+- pyinstaller --onefile --windowed gui.py (bash command)
 - put on sharepoint

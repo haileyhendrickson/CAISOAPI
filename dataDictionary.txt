@@ -34,3 +34,5 @@ PRICES QUERY NAME OPTIONS:
 
 Example Nodes (used for testing)
 standard nodes: C7-1-S1_1_N002 , 0096WD_7_N001
+
+ADOBE_LNODE01,AGNEW_6_N002,2NDST_BP_LNODELD1

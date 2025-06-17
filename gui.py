@@ -122,7 +122,6 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
     
         # combining files and cleaning them up a little
         df_combined = pd.concat(df_list, ignore_index=True) # combining 30 day chunks
-        print(files)
         cond_drop = ['Unnamed: 0.1', 'Unnamed: 0'] # dropping these if they exist
         conditional_drop = [col for col in cond_drop if col in df_combined.columns]
         df_combined = df_combined.drop(columns=conditional_drop)
@@ -130,18 +129,18 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
 
         # pivoting table and reordering columns (for first sheet)
         if 'MW' in df_combined.columns: # this one will do nothing for the DAM pull, except maybe make a duplicate page
-            df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE') # breaking out LMP_TYPE columns, keeping the other indexed columns
+            df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE', fill_value = '') # breaking out LMP_TYPE columns, keeping the other indexed columns
             df_combined = df_combined.reset_index() # resetting index to work with column names
-            if 'Greenhouse Gas' in df_combined.columns: # DAM market
+            if 'Greenhouse Gas' in df_combined.columns: # DAM 
                 df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
-            else: # HASP market
+            else: # HASP 
                 df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Loss', 'LMP']]
-        if 'VALUE' in df_combined.columns: # RTM Market, I think
-            df_combined = pd.pivot_table(df_combined, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
+        if 'VALUE' in df_combined.columns: # RTM , I think
+            df_combined = pd.pivot_table(df_combined, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE', fill_value = '')
             df_combined = df_combined.reset_index()
             df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
-        if 'PRC' in df_combined.columns: # FFM market, I think
-            df_combined = pd.pivot_table(df_combined, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
+        if 'PRC' in df_combined.columns: # FFM , I think
+            df_combined = pd.pivot_table(df_combined, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE', fill_value = '')
             df_combined = df_combined.reset_index()
             df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
         
