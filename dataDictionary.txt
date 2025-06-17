@@ -34,6 +34,3 @@ PRICES QUERY NAME OPTIONS:
 
 Example Nodes (used for testing)
 standard nodes: C7-1-S1_1_N002 , 0096WD_7_N001
-sptie nodes: AMARGOSA_1_SN001
-PRC_DC_REF prices: BELRIDGE_1_N001
-RTM_LAP: CLAP_AEPCO-APND

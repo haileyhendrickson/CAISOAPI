@@ -9,13 +9,15 @@ from zipfile import ZipFile
 from io import BytesIO
 from datetime import date, timedelta, time, datetime
 import time
-# import datetime
+import sys
 
-# all the functions
-def backend(market_run_id, startdate, enddate): # actually pulls data
-    # API Calling Function
+
+# all backend code
+def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats data into the excel file.
     node=node_var.get()
-    def pull_request(startdate, enddate): # remove queryname later
+    node = node.replace(' ', '')
+    # API Calling Function
+    def pull_request(startdate, enddate): # calls each 30 day chunk and adds it to a list of files
         startdate = int(startdate.strftime('%Y%m%d')) # updating date format
         enddate = int(enddate.strftime('%Y%m%d'))
         url = "http://oasis.caiso.com/oasisapi/SingleZip"
@@ -30,77 +32,78 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
             }
 
         response = requests.get(url, params=params)
-        # print(response.url) # for testing purposes
-        try:
+        try: # reading the file
             with ZipFile(BytesIO(response.content)) as z:
                 for filename in z.namelist():
                     with z.open(filename) as f:
-                        df = pd.read_csv(f)
-                        df.to_csv(f'pull#{counter}.csv')
+                        df = pd.read_csv(f) 
+                        df.to_csv(f'pull#{counter}.csv') # creating chunk
                         if '<?xml version="1.0" encoding="UTF-8"?>' in df.columns:
                             pass
                         else: # only appending files that pull- error handling 
-                            files.append(f'pull#{counter}.csv') 
-        except Exception as e: 
+                            files.append(f'pull#{counter}.csv') # creating a list of all files I need to combine
+        except Exception as e: # if there are errors- usually doesn't come to this. can probably delete
             print(f"Error message: {e}")
 
     # cleaning function!
     def cleanFile(filename):
         df = pd.read_csv(filename) # reading in file
-        all_drop = ['NODE_ID_XML', 'NODE_ID', 'PNODE_RESMRID', 'OPR_DT', 'OPR_HR', 'OPR_INTERVAL', 'XML_DATA_ITEM', 'POS', 'GROUP', 'GRP_TYPE', 'MARKET_RUN_ID', 'Unnamed: 0', 'INTERVAL_START_TIME']
+        all_drop = ['NODE_ID_XML', 'NODE_ID', 'PNODE_RESMRID', 'OPR_DT', 'OPR_HR', 'OPR_INTERVAL', 'XML_DATA_ITEM', 'POS', 'GROUP', 'GRP_TYPE', 'MARKET_RUN_ID', 'Unnamed: 0', 'INTERVAL_START_TIME'] # dropping unneeded columns
         valid_columns = [col for col in all_drop if col in df.columns]
-        df = df.drop(columns=valid_columns)
+        df = df.drop(columns=valid_columns) # dropping conditionally- if they are in the df, they are dropped. prevents errors. 
         df = df.sort_values(['INTERVALSTARTTIME_GMT']) # sorting by time/date
         df['INTERVALSTARTTIME_GMT'] = df['INTERVALSTARTTIME_GMT'].str.replace('-00:00', '').str.replace('T', ' ') # getting rid of seconds
         df['INTERVALENDTIME_GMT'] = df['INTERVALENDTIME_GMT'].str.replace('-00:00','').str.replace('T',' ') # getting rid of seconds
         # conditional cleaning
-        if 'LMP_TYPE' in df.columns:
+        if 'LMP_TYPE' in df.columns: # making LMP_TYPE more readable
                 df['LMP_TYPE'] = df['LMP_TYPE'].replace({'LMP': 'LMP', 'MCC': 'Congestion', 'MCE':'Energy', 'MCL': 'Loss', 'MGHG': 'Greenhouse Gas'})
-        if 'MW' in df.columns:
+        if 'MW' in df.columns: # rounding DAM and HASP
             df['MW'] = df['MW'].round(4)
-        if 'VALUE' in df.columns:
+        if 'VALUE' in df.columns:# rounding RTM
             df['VALUE'] = df['VALUE'].round(4)
-        if 'PRC' in df.columns:
+        if 'PRC' in df.columns:# rounding FMM
             df['PRC'] = df['PRC'].round(4)
+        # splitting date into smaller columns for readability and grouping
         df[['Year', 'Month','Day']] = df['INTERVALSTARTTIME_GMT'].str.split('-',expand=True)
         df[['Day', 'Time']] = df['Day'].str.split(' ',expand=True)
         df[['Hour (GMT)','Minute', 'Seconds']] = df['Time'].str.split(':',expand=True)
-        df = df.drop(columns=['Time', 'Seconds'])
-        df.to_csv(filename) # should replace file with cleaned version
+        df = df.drop(columns=['Time', 'Seconds']) # ditching time and seconds
+        df.to_csv(filename) # replacing file with cleaned version
 
-    # hourly average function
-    def hourly_average(filename): # creating a new file for hourly averages
+    # hourly average sheet function
+    def hourly_average(filename): # creating a new sheet in the same excel file for hourly averages
         df = pd.read_excel(filename)
         if market_run_id == 'HASP': # doesn't have greenhouse gas
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean()
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         else:
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean()
-
-        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer:
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
             df_avg.to_excel(writer, sheet_name='Hourly Average', index=False)
 
     # user inputs map
-    map = {
+    map = { # market name, market_run_id, query_name, version - needed for parameters
         ('DAM'): ('DAM', 'PRC_LMP', 1), 
         ('RTM'): ('RTM', 'PRC_INTVL_LMP', 3),
         ('HASP'): ('HASP', 'PRC_HASP_LMP', 1),
         ('FFM'): ('RTPD', 'PRC_RTPD_LMP', 2,), 
     }
     
-    market_run_id, queryname, version = map.get((market_run_id), ('unknown')) 
-
+    market_run_id, queryname, version = map.get((market_run_id), ('unknown')) # getting variables from map based on user input
     startdate = datetime.strptime(startdate, '%m/%d/%y').date() # formats it to work with datetime package
     enddate = datetime.strptime(enddate, '%m/%d/%y').date()
     difference = enddate - startdate # counts days in between
     days = difference.days # making a counter for my loop bc .days is readonly
 
-    # logic that breaks the whole date range into chunks of 30 days to comply with the API
-    files = [] # creating an empty list for my files
-    df_list = []
+    # logic for using the API, cleaning, and formatting as an xlsx file.
+    files = [] # creating an empty list for my csv files 
+    df_list = [] # empty list that stores the actual rows of the files later (for concatenation)
     counter = 0 # initializing, used to label different files
-    timestamp = datetime.now()
+    timestamp = datetime.now() # using for filename
     timestamp = timestamp.strftime('%m-%d-%Y %H%M')
-    if difference.days > 30:
+
+    if difference.days > 30: # logic that breaks the whole date range into chunks of 30 days to comply with the API
         while days > 0: # until we reach the end date
             if days < 30: # when we get below 30 days left
                 print(f'Pulling data for {startdate} to {enddate}.') 
@@ -116,50 +119,77 @@ def backend(market_run_id, startdate, enddate): # actually pulls data
         for file in files: # if tabbed over, it cleans each pull before combining, but is bad at error handling
             cleanFile(file) 
             df_list.append(pd.read_csv(file))
-        
+    
+        # combining files and cleaning them up a little
         df_combined = pd.concat(df_list, ignore_index=True) # combining 30 day chunks
-        # mild cleaning for combined file
-        cond_drop = ['Unnamed: 0.1', 'Unnamed: 0']
+        print(files)
+        cond_drop = ['Unnamed: 0.1', 'Unnamed: 0'] # dropping these if they exist
         conditional_drop = [col for col in cond_drop if col in df_combined.columns]
         df_combined = df_combined.drop(columns=conditional_drop)
         df_combined = df_combined.drop_duplicates() # dropping duplicate 
-        if 'MW' in df_combined.columns: # this one will do nothing for the DAM pull, except maybe make a duplicate page
-            df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
-        if 'VALUE' in df_combined.columns:
-            df_combined = pd.pivot_table(df_combined, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
-        if 'PRC' in df_combined.columns:
-            df_combined = pd.pivot_table(df_combined, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
-        df_combined = df_combined.reset_index()
-        df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)
-        hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
-        status_lbl.configure(text='Finished!')
-        root.update()
 
-    if difference.days <= 30:
+        # pivoting table and reordering columns (for first sheet)
+        if 'MW' in df_combined.columns: # this one will do nothing for the DAM pull, except maybe make a duplicate page
+            df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE') # breaking out LMP_TYPE columns, keeping the other indexed columns
+            df_combined = df_combined.reset_index() # resetting index to work with column names
+            if 'Greenhouse Gas' in df_combined.columns: # DAM market
+                df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
+            else: # HASP market
+                df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Loss', 'LMP']]
+        if 'VALUE' in df_combined.columns: # RTM Market, I think
+            df_combined = pd.pivot_table(df_combined, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
+            df_combined = df_combined.reset_index()
+            df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
+        if 'PRC' in df_combined.columns: # FFM market, I think
+            df_combined = pd.pivot_table(df_combined, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
+            df_combined = df_combined.reset_index()
+            df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
+        
+        # pushing to excel file, deleting csv chunks
+        df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', sheet_name=f'{market_run_id}', index=False) # writing initial report to an xlsx file
+        hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
+
+        # deleting all of the csv 30 day chunk files from the folder
+        if getattr(sys, 'frozen', False): # finding file path to wherever GUI is stored
+            application_path = os.path.dirname(sys.executable)
+        for csv in files: # deleting extra files
+            filepath = os.path.join(application_path, csv) # creating path to CSV file that will populate in the GUI folder
+            os.remove(filepath) # deleting files
+
+        status_lbl.configure(text='Finished!') # updating status label 
+        root.update()            
+
+    if difference.days <= 30: # logic for user requests that are less than 30 days (doesn't need chunking)
         print(f'Pulling data for {startdate} to {enddate}.')
         pull_request(startdate, enddate)
         cleanFile('pull#0.csv')
         df = pd.read_csv('pull#0.csv')
         if 'MW' in df.columns: # this one will do nothing for the DAM pull
-            df = pd.pivot_table(df, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+            df = pd.pivot_table(df, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE') # breaking out LMP_TYPE columns, keeping the other indexed columns
         if 'VALUE' in df.columns:
-            df = pd.pivot_table(df, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+            df = pd.pivot_table(df, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
         if 'PRC' in df.columns:
-            df = pd.pivot_table(df, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour', 'Minute'], columns='LMP_TYPE')
+            df = pd.pivot_table(df, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
         df = df.reset_index()
-        df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False)    
-        hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')    
+        df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False) # writing initial report to an xlsx file
+        hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
+
+        # deleting csv from folder
+        if getattr(sys, 'frozen', False): # finding file path to wherever GUI is stored
+            application_path = os.path.dirname(sys.executable)
+        filepath = os.path.join(application_path, csv) # creating path to CSV file that will populate in the GUI folder
+        os.remove(filepath) # deleting files
+
         status_lbl.configure(text='Finished!')
-        root.update()
+        root.update() # updating status label
 
    
-# button functions
-def submit(): # runs all of the backend code
+# button/widget functions
+def submit(): # after user gives all inputs, runs all of the backend code
     status_lbl.configure(text='Running...')
     root.update() # updating status label
-    market_run_id=MRIDDropdown.get()
-    
-    backend(market_run_id, startdate, enddate)
+    market_run_id=MRIDDropdown.get() # grabbing market_run_id based on user input
+    backend(market_run_id, startdate, enddate) # calling backend code
 
 def findStartDate(): # for selecting the start date
     global startdate
@@ -171,16 +201,16 @@ def findEndDate(): # for selecting the end date
     enddate = cal.get_date()
     enddate_label.configure(text=f'End date: {enddate}')
 
-def select_output_file(): # for selecting output file path
+def select_output_file(): # for selecting excel output file path
     global output_file_path
     directory = filedialog.askdirectory(title='Select output directory')
     if directory:
         output_file_path = directory
-        output_file_label.configure(text=directory)
+        output_file_label.configure(text=directory) # displaying file path
     else:
-        output_file_label.configure(text='No directory selected yet')
+        output_file_label.configure(text='No directory selected yet') # if they tried to submit without a filepath
 
-def update_report_lbl(choice):
+def update_report_lbl(choice): # displays the report name, based on the user chosen market type
     if choice == 'DAM':
         reportname = 'Locational Marginal Prices'
     if choice == 'RTM':
@@ -231,7 +261,7 @@ status_lbl = CTkLabel(root, text='', font=('Arial',15), text_color='#04033A')
 
 title_lbl = CTkLabel(root, text='CAISO OASIS DATA', font=('Arial',20, 'bold'), text_color='#04033A')
 
-# grid 
+# grid- where all the widgets are displayed on the GUI
 cal.grid(row=6,column=0)
 chooseStartDate.grid(row=4,column=0) 
 chooseEndDate.grid(row=5,column=0)

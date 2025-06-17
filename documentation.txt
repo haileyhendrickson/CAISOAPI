@@ -104,11 +104,23 @@ Pivoted the LMP_TYPE column for readability, per Zoe's request
 Working on adding the hourly average sheet. It is complicated, because each report type has a different column 
 name for price, making pivoting and such difficult.
 Tested with hourly averages for all 4 report types and got them working.
-Sent to Jason and Justin for feedback!
+Sent to Jason and Justin for feedback! Showing the regulatory team in the morning :0
 
-potential issues:
-- not in MST, but in GMT. It is labeled. 
-- DAM still adds the hourly avg, but its the same data. 
-- Might want button for hourly averages
+6/17-
+Got some feedback from regulatory team about expansion to other report pulls (other RTOs). Less feedback on analyis.
+Met with Zoe, got last few cleaning things, and discusses future expansion for project and internship.
+Moved LMP column to the end of the row, renamed sheet 1.
+Deleted CSV from file where GUI is stored. 
+NOTE FOR CODE: Each report type has a different column name for price, so there is a lot of conditional cleaning added.
 
-- final step: pyinstaller gui.py (bash command)
+- work on filling in missing data (get bad node from zoe- look at how pivot fills in mising info)
+- update documentation and code comments
+
+
+- research SPP/MISO/ERCOT/NYIO/PJM data, if it has an API, similarities, etc
+
+
+final steps:
+- destroy and rebuild gui with changes (for nodes, other)
+-  pyinstaller --onefile --windowed gui.py (bash command)
+- put on sharepoint
