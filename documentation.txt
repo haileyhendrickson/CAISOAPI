@@ -104,7 +104,16 @@ Deleted CSV from file where GUI is stored.
 NOTE FOR CODE: Each report type has a different column name for price, so there is a lot of conditional cleaning added.
 I am supposed to be working on backfilling null values but I can't find any nulls to fill. Even tested the one from Zoe, and couldn't find any. (PALOVRDE_5_N101)
 
-- work on filling in missing data (get bad node from zoe- pivot fills in data with ''- what I set.)
+6/18-
+Finally figured out how to see rows that are missing completely (nullChecker.py)
+
+to do 
+- look at missing data on most recent gui pull
+- add sheet of monthly averages
+- add summary statistics sheet
+    - min, max, quartiles, etx
+    - include how many hours the price is below 0 (add duration curve)
+- start gen weighted average (read resources and become familiar with math behind it)
 
 - research SPP/MISO/ERCOT/NYIO/PJM data, if it has an API, similarities, etc
     https://opensource.gridstatus.io/en/latest/Examples/spp/LMP%20Data.html 

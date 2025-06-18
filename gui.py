@@ -70,6 +70,18 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         df = df.drop(columns=['Time', 'Seconds']) # ditching time and seconds
         df.to_csv(filename) # replacing file with cleaned version
 
+    # monthly average sheet function
+    def monthly_average(filename):
+        df = pd.read_excel(filename)
+        if market_run_id == 'HASP': # doesn't have greenhouse gas
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (GMT)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
+        else:
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (GMT)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
+            df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)       
+
     # hourly average sheet function
     def hourly_average(filename): # creating a new sheet in the same excel file for hourly averages
         df = pd.read_excel(filename)
@@ -129,23 +141,24 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
 
         # pivoting table and reordering columns (for first sheet)
         if 'MW' in df_combined.columns: # this one will do nothing for the DAM pull, except maybe make a duplicate page
-            df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE', fill_value = '') # breaking out LMP_TYPE columns, keeping the other indexed columns
+            df_combined = pd.pivot_table(df_combined, values='MW', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE') # breaking out LMP_TYPE columns, keeping the other indexed columns
             df_combined = df_combined.reset_index() # resetting index to work with column names
             if 'Greenhouse Gas' in df_combined.columns: # DAM 
                 df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
             else: # HASP 
                 df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Loss', 'LMP']]
         if 'VALUE' in df_combined.columns: # RTM , I think
-            df_combined = pd.pivot_table(df_combined, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE', fill_value = '')
+            df_combined = pd.pivot_table(df_combined, values='VALUE', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
             df_combined = df_combined.reset_index()
             df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
         if 'PRC' in df_combined.columns: # FFM , I think
-            df_combined = pd.pivot_table(df_combined, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE', fill_value = '')
+            df_combined = pd.pivot_table(df_combined, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
             df_combined = df_combined.reset_index()
             df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
         
         # pushing to excel file, deleting csv chunks
         df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', sheet_name=f'{market_run_id}', index=False) # writing initial report to an xlsx file
+        monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
         hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
 
         # deleting all of the csv 30 day chunk files from the folder
@@ -171,6 +184,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df = pd.pivot_table(df, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
         df = df.reset_index()
         df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False) # writing initial report to an xlsx file
+        monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
         hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
 
         # deleting csv from folder
