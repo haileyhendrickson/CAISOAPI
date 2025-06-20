@@ -6,15 +6,31 @@ import plotly.express as px
 
 df = pd.read_excel('HASP 06-18-2025 1102.xlsx')
 
-df['INTERVALSTARTTIME_GMT'] = pd.to_datetime(df['INTERVALSTARTTIME_GMT']).dt.floor('15T') # makes it some sort of set so I can subtact it later
-full_range = pd.date_range(df['INTERVALSTARTTIME_GMT'].min(), df['INTERVALSTARTTIME_GMT'].max(), freq='15T') # finding all intervals I shoudl have
+# finding and creating rows for missing intervals
+df['INTERVALSTARTTIME_GMT'] = pd.to_datetime(df['INTERVALSTARTTIME_GMT']).dt.floor('15min') # makes it some sort of set so I can subtact it later
+full_range = pd.date_range(start=df['INTERVALSTARTTIME_GMT'].min(), end=df['INTERVALSTARTTIME_GMT'].max(), freq='15min') # finding all intervals I should have
+full_df = pd.DataFrame({'INTERVALSTARTTIME_GMT': full_range}) # df for all intervals I need
+result = full_df.merge( # combining data with full intervals, putting in nulls for vals in rows that had missing intervals 
+    df[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Hour (GMT)', 'Minute','Congestion', 'Energy', 'Loss', 'LMP']],  # Include original data columns
+    on='INTERVALSTARTTIME_GMT',
+    how='outer'
+)
 
-missing = set(full_range) - set(df['INTERVALSTARTTIME_GMT']) # taking out values I do have, finding missing rows
-print(sorted(missing)) # found the mising values!! 
+result.to_csv('test.csv')
 
-# set new int start time that incoudes these missing values, and backfill
-newdf = df.reindex(full_range)
+# filling end interval
+interval_end = result['INTERVALSTARTTIME_GMT'] + pd.Timedelta(minutes=15)
+result['INTERVALENDTIME_GMT']=result['INTERVALENDTIME_GMT'].fillna(interval_end)
+# sort by interval, then node
+result.sort_values(['INTERVALSTARTTIME_GMT', 'NODE']) # not sure I actually need this
 
-print(full_range)
-# print(df.isnull().sum())
+# filling in missing values
+for row in result: # filtering through all rows
+    if result['INTERVALENDTIME_GMT'].isnull: # if it has missing values
+        result[['Year', 'Month','Day']] = result['INTERVALSTARTTIME_GMT'].str.split('-',expand=True) # splitting interval to make yr, mnth, hr, etc
+        result[['Day', 'Time']] = result['Day'].str.split(' ',expand=True)
+        result[['Hour (GMT)','Minute', 'Seconds']] = result['Time'].str.split(':',expand=True)
+        result['NODE'] = result['NODE'].interpolate(method='backfill') # backfilling node bc they should be grouped together
 
+
+result.to_csv('test.csv') # testing purposes

@@ -105,7 +105,8 @@ NOTE FOR CODE: Each report type has a different column name for price, so there 
 I am supposed to be working on backfilling null values but I can't find any nulls to fill. Even tested the one from Zoe, and couldn't find any. (PALOVRDE_5_N101)
 
 6/18-
-Finally figured out how to see rows that are missing completely (nullChecker.py)
+Finally figured out how to see rows that are missing completely (nullChecker.py). Trying to create empty rows using
+the full index and then backfill. 
 
 to do 
 - look at missing data on most recent gui pull
