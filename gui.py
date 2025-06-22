@@ -94,6 +94,11 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
             df_avg.to_excel(writer, sheet_name='Hourly Average', index=False)
 
+    # summary statistics sheet
+    def summary_statistics(filename):
+        df = pd.read_excel(filename)
+        
+
     # user inputs map
     map = { # market name, market_run_id, query_name, version - needed for parameters
         ('DAM'): ('DAM', 'PRC_LMP', 1), 

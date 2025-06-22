@@ -17,23 +17,27 @@ result = full_df.merge( # combining data with full intervals, putting in nulls f
 )
 
 result.to_csv('test.csv')
-
-# filling end interval
-interval_end = result['INTERVALSTARTTIME_GMT'] + pd.Timedelta(minutes=15)
-result['INTERVALENDTIME_GMT']=result['INTERVALENDTIME_GMT'].fillna(interval_end)
-# sort by interval, then node
-result.sort_values(['INTERVALSTARTTIME_GMT', 'NODE']) # not sure I actually need this. sorting so I can backfill node
-result['NODE'] = result['NODE'].bfill() # backfilling node bc they should be grouped together
-result['INTERVALSTARTTIME_GMT'] = result['INTERVALSTARTTIME_GMT'].to_string()
-
-result.to_csv('test.csv') # testing purposes
+print('file created.')
 
 # filling in missing values
+interval_end = result['INTERVALSTARTTIME_GMT'] + pd.Timedelta(minutes=15) # finding starttime and adding 15 minutes
+result['INTERVALENDTIME_GMT']=result['INTERVALENDTIME_GMT'].fillna(interval_end) # filling in empty values
+result.sort_values(['INTERVALSTARTTIME_GMT', 'NODE']) # not sure I actually need this. sorting so I can backfill node
+result['NODE'] = result['NODE'].bfill() # backfilling node bc they should be grouped together
+result['INTERVALSTARTTIME_GMT'] = result['INTERVALSTARTTIME_GMT'].astype(str)
 for row in result: # filtering through all rows
     if result['INTERVALENDTIME_GMT'].isnull: # if it has missing values
         result[['Year', 'Month','Day']] = result['INTERVALSTARTTIME_GMT'].str.split('-',expand=True) # splitting interval to make yr, mnth, hr, etc
         result[['Day', 'Time']] = result['Day'].str.split(' ',expand=True)
         result[['Hour (GMT)','Minute', 'Seconds']] = result['Time'].str.split(':',expand=True)
 
+result = result.drop(columns=['Time', 'Seconds'])
 
 result.to_csv('test.csv') # testing purposes
+print('string/date columns cleaned.')
+
+# filling in LMP values
+LMP_list = ['Congestion', 'Energy', 'Loss', 'LMP']
+for value in df[LMP_list]: # making a for loop for efficiency purposes
+    # find previous day's value, set to object
+    df[LMP_list] = df[LMP_list].fillna() # put value in fillna()
