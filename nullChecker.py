@@ -22,7 +22,11 @@ result.to_csv('test.csv')
 interval_end = result['INTERVALSTARTTIME_GMT'] + pd.Timedelta(minutes=15)
 result['INTERVALENDTIME_GMT']=result['INTERVALENDTIME_GMT'].fillna(interval_end)
 # sort by interval, then node
-result.sort_values(['INTERVALSTARTTIME_GMT', 'NODE']) # not sure I actually need this
+result.sort_values(['INTERVALSTARTTIME_GMT', 'NODE']) # not sure I actually need this. sorting so I can backfill node
+result['NODE'] = result['NODE'].bfill() # backfilling node bc they should be grouped together
+result['INTERVALSTARTTIME_GMT'] = result['INTERVALSTARTTIME_GMT'].to_string()
+
+result.to_csv('test.csv') # testing purposes
 
 # filling in missing values
 for row in result: # filtering through all rows
@@ -30,7 +34,6 @@ for row in result: # filtering through all rows
         result[['Year', 'Month','Day']] = result['INTERVALSTARTTIME_GMT'].str.split('-',expand=True) # splitting interval to make yr, mnth, hr, etc
         result[['Day', 'Time']] = result['Day'].str.split(' ',expand=True)
         result[['Hour (GMT)','Minute', 'Seconds']] = result['Time'].str.split(':',expand=True)
-        result['NODE'] = result['NODE'].interpolate(method='backfill') # backfilling node bc they should be grouped together
 
 
 result.to_csv('test.csv') # testing purposes
