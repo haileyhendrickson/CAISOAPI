@@ -70,6 +70,53 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         df = df.drop(columns=['Time', 'Seconds']) # ditching time and seconds
         df.to_csv(filename) # replacing file with cleaned version
 
+    # missing values function
+    def fill_missing_values(filename):
+        df = pd.read_excel(filename)
+        # finding and creating rows for missing intervals
+        df['INTERVALSTARTTIME_GMT'] = pd.to_datetime(df['INTERVALSTARTTIME_GMT']).dt.floor('15min') # makes it some sort of set so I can subtact it later
+        full_range = pd.date_range(start=df['INTERVALSTARTTIME_GMT'].min(), end=df['INTERVALSTARTTIME_GMT'].max(), freq='15min') # finding all intervals I should have
+        full_df = pd.DataFrame({'INTERVALSTARTTIME_GMT': full_range}) # df for all intervals I need
+        if 'Greenhouse Gas' in full_df.columns: # conditional logic for HASP
+            result = full_df.merge( # combining data with full intervals, putting in nulls for vals in rows that had missing intervals 
+                df[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Hour (GMT)', 'Minute','Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']],  # Include original data columns
+                on='INTERVALSTARTTIME_GMT',
+                how='outer'
+            )
+        else:
+            result = full_df.merge( # combining data with full intervals, putting in nulls for vals in rows that had missing intervals 
+                df[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Hour (GMT)', 'Minute','Congestion', 'Energy', 'Loss', 'LMP']],  # Include original data columns
+                on='INTERVALSTARTTIME_GMT',
+                how='outer'
+            )
+        # filling in missing values
+        interval_end = result['INTERVALSTARTTIME_GMT'] + pd.Timedelta(minutes=15) # finding starttime and adding 15 minutes
+        result['INTERVALENDTIME_GMT']=result['INTERVALENDTIME_GMT'].fillna(interval_end) # filling in empty values
+        result = result.sort_values(['INTERVALSTARTTIME_GMT', 'NODE']) # making sure it is sorted by node so I can backfill
+        result['NODE'] = result['NODE'].bfill() # backfilling node
+        result['INTERVALSTARTTIME_GMT'] = result['INTERVALSTARTTIME_GMT'].astype(str) # changing start time from date to string so I can split it
+        for row in result: # filtering through all rows
+            if result['INTERVALENDTIME_GMT'].isnull: # if it has missing values, fill them in!
+                result[['Year', 'Month','Day']] = result['INTERVALSTARTTIME_GMT'].str.split('-',expand=True) # splitting interval to make yr, mnth, hr, etc
+                result[['Day', 'Time']] = result['Day'].str.split(' ',expand=True)
+                result[['Hour (GMT)','Minute', 'Seconds']] = result['Time'].str.split(':',expand=True)
+        result = result.drop(columns=['Time', 'Seconds'])
+        # filling in LMP values
+        result = result.sort_values(['Hour (GMT)', 'Minute'])
+        if 'Greenhouse Gas' in result.columns: # conditional logic for HASP
+            LMP_list = ['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']    
+        else:
+            LMP_list = ['Congestion', 'Energy', 'Loss', 'LMP']
+        for column in LMP_list: # making a for loop for efficiency purposes    
+            result[column] = result[column].bfill() # can backfill here because of the new sorting- takes previous day's same hour and minute intvl price.
+        result = result.sort_values('INTERVALSTARTTIME_GMT') # setting to original sorting
+        # reordering columns 
+        if 'Greenhouse Gas' in result.columns: 
+            result = result[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute','Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP' ]]
+        else:
+            result = result[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute','Congestion', 'Energy', 'Loss', 'LMP' ]]
+        result.to_excel(filename) # should replace file with the filled version
+
     # monthly average sheet function
     def monthly_average(filename):
         df = pd.read_excel(filename)
@@ -91,13 +138,93 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         else:
             df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
-        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
-            df_avg.to_excel(writer, sheet_name='Hourly Average', index=False)
-
-    # summary statistics sheet
-    def summary_statistics(filename):
-        df = pd.read_excel(filename)
         
+        count = (df_avg['LMP'] <= 0).sum()
+        # chart logic here
+
+        # writing hourly averages sheet
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
+            df_avg.to_excel(writer, sheet_name='Hourly Average', index=False) 
+        # writing below 0 sheet
+            row = 0
+            pd.DataFrame([['Count of times LMP is below 0']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, index=False)
+            row +=1 # not adding a blank row
+            pd.DataFrame([[count]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row += 2 # adding a blank row in between
+            pd.DataFrame([['Duration Curve']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row +=1
+            # df.to_excel(writer, sheet_name='Days Below 0', startrow=row, header=False, index=False) # write chart with this on
+
+    # summary statistics sheet function
+    def summary_statistics(filename): 
+        df = pd.read_excel(filename)
+        top5LMP = df.sort_values(by='LMP', ascending=False).head(5) # prints top 5 rows based on LMP
+        min5LMP = df.sort_values(by='LMP', ascending=True).head(5) # bottom 5 rows based on LMP
+        top5cong = df.sort_values(by='Congestion', ascending=False).head(5) # prints top 5 rows based on congestion
+        min5cong = df.sort_values(by='Congestion', ascending=True).head(5) # bottom 5 rows based on congestion
+        top5eng = df.sort_values(by='Energy', ascending=False).head(5) # prints top 5 rows based on energy
+        min5eng = df.sort_values(by='Energy', ascending=True).head(5) # bottom 5 rows based on energy
+        top5loss = df.sort_values(by='Loss', ascending=False).head(5) # prints top 5 rows based on loss
+        min5loss = df.sort_values(by='Loss', ascending=True).head(5) # bottom 5 rows based on loss
+        if 'Greenhouse Gas' in df.columns(): # conditional logic to handle GHG columns
+            top5ghg = df.sort_values(by='Greenhouse Gas', ascending=False).head(5) # prints top 5 rows based on loss
+            min5ghg = df.sort_values(by='Greenhouse Gas', ascending=True).head(5) # bottom 5 rows based on loss
+        
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
+            # summary statistics for 4 elements of LMP
+            row = 0
+            pd.DataFrame([['Summary Statistics']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row += 1
+            if 'Greenhouse Gas' in df.columns():
+                pd.DataFrame([[df.describe('Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP')]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            else:
+                pd.DataFrame([[df.describe('Congestion', 'Energy', 'Loss', 'LMP')]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row += 2 # adding a space in between
+
+            # min, max 5 rows for each of the 4 LMP factors 
+            pd.DataFrame([['LMP 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([[top5LMP]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([['LMP 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([[min5LMP]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=2 # break
+            pd.DataFrame([['Congestion 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([[top5cong]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([['Congestion 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([[min5cong]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=2 # break
+            pd.DataFrame([['Energy 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([[top5eng]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([['Energy 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([[min5eng]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=2 # break
+            pd.DataFrame([['Loss 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([[top5loss]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([['Loss 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=1
+            pd.DataFrame([[min5loss]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row+=2 # break
+            if 'Greenhouse Gas' in df.columns(): # only add these if GHG is a column 
+                pd.DataFrame([['Greenhouse Gas 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+                row+=1
+                pd.DataFrame([[top5ghg]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+                row+=1
+                pd.DataFrame([['Greenhouse Gas 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+                row+=1
+                pd.DataFrame([[min5ghg]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+                row+=2 # break
+        # maybe include a macro for readability formatting
+
 
     # user inputs map
     map = { # market name, market_run_id, query_name, version - needed for parameters
@@ -163,8 +290,10 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         
         # pushing to excel file, deleting csv chunks
         df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', sheet_name=f'{market_run_id}', index=False) # writing initial report to an xlsx file
+        fill_missing_values(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')        
         monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
         hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
+        summary_statistics(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
 
         # deleting all of the csv 30 day chunk files from the folder
         if getattr(sys, 'frozen', False): # finding file path to wherever GUI is stored
@@ -189,8 +318,10 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df = pd.pivot_table(df, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
         df = df.reset_index()
         df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False) # writing initial report to an xlsx file
+        fill_missing_values(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
         monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
         hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
+        summary_statistics(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
 
         # deleting csv from folder
         if getattr(sys, 'frozen', False): # finding file path to wherever GUI is stored

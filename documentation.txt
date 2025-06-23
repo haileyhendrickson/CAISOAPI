@@ -110,11 +110,15 @@ Created empty rows using the full index and then backfill.
 
 6/22-
 Addded monthly averages sheet
-Working on filling in my null values in bew rows
+Working on filling in my null values in new rows. Got everything but LMP numbers
+
+6/23-
+working on adding extra sheets - ADD COMPATIBILITY FOR GHG COLUMNS
+working on filling null values
+add excel macro for formatability?
 
 to do 
-- look at missing data on most recent gui pull
-- add sheet of monthly averages
+- finish adding missing LMP data 
 - add summary statistics sheet
     - min, max, quartiles, etx
     - include how many hours the price is below 0 (add duration curve)
