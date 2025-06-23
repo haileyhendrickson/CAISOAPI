@@ -117,14 +117,14 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             result = result[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute','Congestion', 'Energy', 'Loss', 'LMP' ]]
         result.to_excel(filename) # should replace file with the filled version
 
-    # monthly average sheet function
+    # monthly average sheet function (12x24 info)
     def monthly_average(filename):
         df = pd.read_excel(filename)
         if market_run_id == 'HASP': # doesn't have greenhouse gas
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean().round(4) # grouping
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (GMT)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         else:
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean().round(4) # grouping
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (GMT)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
             df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)       
@@ -133,96 +133,99 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
     def hourly_average(filename): # creating a new sheet in the same excel file for hourly averages
         df = pd.read_excel(filename)
         if market_run_id == 'HASP': # doesn't have greenhouse gas
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean().round(4) # grouping
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         else:
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean().round(4) # grouping
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
         
-        count = (df_avg['LMP'] <= 0).sum()
+        count = (df_avg['LMP'] < 0).sum() # counting how many hours LMP is below 0
         # chart logic here
 
-        # writing hourly averages sheet
-        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
-            df_avg.to_excel(writer, sheet_name='Hourly Average', index=False) 
-        # writing below 0 sheet
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            # writing hourly averages sheet
+            df_avg.to_excel(writer, sheet_name='Hourly Average', index=False) # adding sheet to excel file
+            # writing below 0 sheet, using the hourly averages df
             row = 0
-            pd.DataFrame([['Count of times LMP is below 0']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, index=False)
-            row +=1 # not adding a blank row
+            pd.DataFrame([['Count of times LMP is below 0:']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            row += 1
             pd.DataFrame([[count]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
             row += 2 # adding a blank row in between
             pd.DataFrame([['Duration Curve']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row +=1
+            row += 1
             # df.to_excel(writer, sheet_name='Days Below 0', startrow=row, header=False, index=False) # write chart with this on
 
     # summary statistics sheet function
     def summary_statistics(filename): 
         df = pd.read_excel(filename)
-        top5LMP = df.sort_values(by='LMP', ascending=False).head(5) # prints top 5 rows based on LMP
-        min5LMP = df.sort_values(by='LMP', ascending=True).head(5) # bottom 5 rows based on LMP
-        top5cong = df.sort_values(by='Congestion', ascending=False).head(5) # prints top 5 rows based on congestion
-        min5cong = df.sort_values(by='Congestion', ascending=True).head(5) # bottom 5 rows based on congestion
-        top5eng = df.sort_values(by='Energy', ascending=False).head(5) # prints top 5 rows based on energy
-        min5eng = df.sort_values(by='Energy', ascending=True).head(5) # bottom 5 rows based on energy
-        top5loss = df.sort_values(by='Loss', ascending=False).head(5) # prints top 5 rows based on loss
-        min5loss = df.sort_values(by='Loss', ascending=True).head(5) # bottom 5 rows based on loss
-        if 'Greenhouse Gas' in df.columns(): # conditional logic to handle GHG columns
-            top5ghg = df.sort_values(by='Greenhouse Gas', ascending=False).head(5) # prints top 5 rows based on loss
-            min5ghg = df.sort_values(by='Greenhouse Gas', ascending=True).head(5) # bottom 5 rows based on loss
-        
-        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
+        if 'Greenhouse Gas' in df.columns: # conditional logic for finding applicable column
+            cols = ['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']
+        else:
+            cols = ['Congestion', 'Energy', 'Loss', 'LMP']
+        desc=df[cols].describe() # finding what I want to display
+
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer: # adding sheet to excel file
             # summary statistics for 4 elements of LMP
             row = 0
-            pd.DataFrame([['Summary Statistics']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            pd.DataFrame([['Summary Statistics']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False) # title
             row += 1
-            if 'Greenhouse Gas' in df.columns():
-                pd.DataFrame([[df.describe('Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP')]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            else:
-                pd.DataFrame([[df.describe('Congestion', 'Energy', 'Loss', 'LMP')]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row += 2 # adding a space in between
+            desc.to_excel(writer, sheet_name = 'Summary Statistics', startrow=row, header=False, index=False) # writing summary statistics to df
+            row += 13 # adding space in between  
+
+            top5LMP = df.sort_values(by='LMP', ascending=False).head(5) # prints top 5 rows based on LMP
+            min5LMP = df.sort_values(by='LMP', ascending=True).head(5) # bottom 5 rows based on LMP
+            top5cong = df.sort_values(by='Congestion', ascending=False).head(5) # prints top 5 rows based on congestion
+            min5cong = df.sort_values(by='Congestion', ascending=True).head(5) # bottom 5 rows based on congestion
+            top5eng = df.sort_values(by='Energy', ascending=False).head(5) # prints top 5 rows based on energy
+            min5eng = df.sort_values(by='Energy', ascending=True).head(5) # bottom 5 rows based on energy
+            top5loss = df.sort_values(by='Loss', ascending=False).head(5) # prints top 5 rows based on loss
+            min5loss = df.sort_values(by='Loss', ascending=True).head(5) # bottom 5 rows based on loss
+            if 'Greenhouse Gas' in df.columns: # conditional logic to handle GHG columns
+                top5ghg = df.sort_values(by='Greenhouse Gas', ascending=False).head(5) # prints top 5 rows based on loss
+                min5ghg = df.sort_values(by='Greenhouse Gas', ascending=True).head(5) # bottom 5 rows based on loss
 
             # min, max 5 rows for each of the 4 LMP factors 
-            pd.DataFrame([['LMP 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            pd.DataFrame([['LMP 5 highest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
+            row+= 1
+            top5LMP.to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+            row+=6
+            pd.DataFrame([['LMP 5 lowest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row+=1
-            pd.DataFrame([[top5LMP]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            min5LMP.to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+            row+=6 # break
+            pd.DataFrame([['Congestion 5 highest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row+=1
-            pd.DataFrame([['LMP 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            top5cong.to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+            row+=6
+            pd.DataFrame([['Congestion 5 lowest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row+=1
-            pd.DataFrame([[min5LMP]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=2 # break
-            pd.DataFrame([['Congestion 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            min5cong.to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+            row+=6 # break
+            pd.DataFrame([['Energy 5 highest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row+=1
-            pd.DataFrame([[top5cong]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            top5eng.to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+            row+=6
+            pd.DataFrame([['Energy 5 lowest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row+=1
-            pd.DataFrame([['Congestion 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            min5eng.to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+            row+=6 # break
+            pd.DataFrame([['Loss 5 highest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row+=1
-            pd.DataFrame([[min5cong]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=2 # break
-            pd.DataFrame([['Energy 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            top5loss.to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+            row+=6
+            pd.DataFrame([['Loss 5 lowest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row+=1
-            pd.DataFrame([[top5eng]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=1
-            pd.DataFrame([['Energy 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=1
-            pd.DataFrame([[min5eng]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=2 # break
-            pd.DataFrame([['Loss 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=1
-            pd.DataFrame([[top5loss]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=1
-            pd.DataFrame([['Loss 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=1
-            pd.DataFrame([[min5loss]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-            row+=2 # break
-            if 'Greenhouse Gas' in df.columns(): # only add these if GHG is a column 
-                pd.DataFrame([['Greenhouse Gas 5 highest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            min5loss.to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+            row+=6 # break
+            if 'Greenhouse Gas' in df.columns: # only add these if GHG is a column 
+                pd.DataFrame([['Greenhouse Gas 5 highest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
                 row+=1
-                pd.DataFrame([[top5ghg]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+                pd.DataFrame([[top5ghg]]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+                row+=6
+                pd.DataFrame([['Greenhouse Gas 5 lowest prices']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
                 row+=1
-                pd.DataFrame([['Greenhouse Gas 5 lowest prices']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-                row+=1
-                pd.DataFrame([[min5ghg]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
-                row+=2 # break
+                pd.DataFrame([[min5ghg]]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, index=False)
+                row+=6 # break
         # maybe include a macro for readability formatting
 
 
@@ -289,7 +292,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
         
         # pushing to excel file, deleting csv chunks
-        df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', sheet_name=f'{market_run_id}', index=False) # writing initial report to an xlsx file
+        df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', sheet_name='Report') # writing initial report to an xlsx file
         fill_missing_values(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')        
         monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
         hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
@@ -317,7 +320,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         if 'PRC' in df.columns:
             df = pd.pivot_table(df, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
         df = df.reset_index()
-        df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', index=False) # writing initial report to an xlsx file
+        df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', sheet_name='Report') # writing initial report to an xlsx file
         fill_missing_values(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
         monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
         hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file

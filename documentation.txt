@@ -113,15 +113,17 @@ Addded monthly averages sheet
 Working on filling in my null values in new rows. Got everything but LMP numbers
 
 6/23-
-working on adding extra sheets - ADD COMPATIBILITY FOR GHG COLUMNS
-working on filling null values
-add excel macro for formatability?
+Finished filling the null values for missing intervals and added to GUI.
+Finished first draft of extra sheets (not including duration chart), adding compatibility for GHG columns. Had issues with
+appending info and data to sheets, so had to add 'overlay' parameter to writer lines.
+Figured out how to add the summary statistics. It is on there, but it doesn't look super pretty. I'm interested in creating some macros to make it look kind of nice.
+Updated sharepoint with version 2 (including basic analysis pages)
+(tonight: read up on load duration curves, and start mapping out how to graph)
 
-to do 
-- finish adding missing LMP data 
-- add summary statistics sheet
-    - min, max, quartiles, etx
-    - include how many hours the price is below 0 (add duration curve)
+to do  
+- show added pages to zoe and justin and get some feedback
+- add duration curve
+- explore excel macros and add one for formatting on extra sheets (make it look nice with bolding and highlighting and such)
 - start gen weighted average (read resources and become familiar with math behind it)
 
 - research SPP/MISO/ERCOT/NYIO/PJM data, if it has an API, similarities, etc
