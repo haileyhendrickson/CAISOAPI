@@ -120,9 +120,21 @@ Figured out how to add the summary statistics. It is on there, but it doesn't lo
 Updated sharepoint with version 2 (including basic analysis pages)
 (tonight: read up on load duration curves, and start mapping out how to graph)
 
+duration curves notes:
+- the x axis represents 100% of some sort of timeframe (a day, month, year, etc)
+    - sort data by LMP, then count how many of each value, and what percent it takes of the curve 
+        - every time I add a value, I should add the percentage already accounted for
+    - From the data available from the load curve determines the maximum load and the duration for which it occurs.
+    - Now take the next load and the total time during which this and the previous load occurs.
+    - Plots the loads against the time during which it occurs.
+- Load duration curves can show peaks, where more un-renewable energy sources are needed
+- need a new column with duration (add already accounted for percentages) - use a while loop?
+
 to do  
+- fix rounding 
 - show added pages to zoe and justin and get some feedback
 - add duration curve
+- rename sheet 1 again
 - explore excel macros and add one for formatting on extra sheets (make it look nice with bolding and highlighting and such)
 - start gen weighted average (read resources and become familiar with math behind it)
 
