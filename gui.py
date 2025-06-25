@@ -8,6 +8,7 @@ import requests
 from zipfile import ZipFile
 from io import BytesIO
 from datetime import date, timedelta, time, datetime
+import openpyxl
 import time
 import sys
 
@@ -121,10 +122,12 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
     def monthly_average(filename):
         df = pd.read_excel(filename)
         if market_run_id == 'HASP': # doesn't have greenhouse gas
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean().round(4) # grouping
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
+            df_avg[['Congestion', 'Energy', 'Loss','LMP']] = df_avg[['Congestion', 'Energy', 'Loss','LMP']].round(4)
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (GMT)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         else:
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean().round(4) # grouping
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
+            df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']] = df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas' 'LMP']].round(4)
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (GMT)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
             df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)       
@@ -134,9 +137,11 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         df = pd.read_excel(filename)
         if market_run_id == 'HASP': # doesn't have greenhouse gas
             df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean().round(4) # grouping
+            df_avg[['Congestion', 'Energy', 'Loss','LMP']] = df_avg[['Congestion', 'Energy', 'Loss','LMP']].round(4)
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         else:
             df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean().round(4) # grouping
+            df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']] = df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas' 'LMP']].round(4)            
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
         
         count = (df_avg['LMP'] < 0).sum() # counting how many hours LMP is below 0
@@ -147,13 +152,12 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df_avg.to_excel(writer, sheet_name='Hourly Average', index=False) # adding sheet to excel file
             # writing below 0 sheet, using the hourly averages df
             row = 0
-            pd.DataFrame([['Count of times LMP is below 0:']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            pd.DataFrame([['Number of hours LMP is below 0:']]).to_excel(writer, sheet_name = 'Hours Below 0', startrow = row, header=False, index=False)
             row += 1
-            pd.DataFrame([[count]]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            pd.DataFrame([[count]]).to_excel(writer, sheet_name = 'Hours Below 0', startrow = row, header=False, index=False)
             row += 2 # adding a blank row in between
-            pd.DataFrame([['Duration Curve']]).to_excel(writer, sheet_name = 'Days Below 0', startrow = row, header=False, index=False)
+            pd.DataFrame([['Duration Curve']]).to_excel(writer, sheet_name = 'Hours Below 0', startrow = row, header=False, index=False)
             row += 1
-            # df.to_excel(writer, sheet_name='Days Below 0', startrow=row, header=False, index=False) # write chart with this on
 
     # summary statistics sheet function
     def summary_statistics(filename): 
@@ -171,6 +175,8 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             row += 1
             desc.to_excel(writer, sheet_name = 'Summary Statistics', startrow=row, header=False, index=False) # writing summary statistics to df
             row += 13 # adding space in between  
+
+            df = df.drop(columns=['Unnamed: 0']) 
 
             top5LMP = df.sort_values(by='LMP', ascending=False).head(5) # prints top 5 rows based on LMP
             min5LMP = df.sort_values(by='LMP', ascending=True).head(5) # bottom 5 rows based on LMP
@@ -292,11 +298,17 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
         
         # pushing to excel file, deleting csv chunks
-        df_combined.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', sheet_name='Report') # writing initial report to an xlsx file
-        fill_missing_values(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')        
-        monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
-        hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
-        summary_statistics(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
+        file = f'{output_file_path}/{market_run_id} {timestamp}.xlsx'
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl') as writer: 
+            df_combined.to_excel(writer, sheet_name = 'Report', index=False) # writing initial report to an xlsx file
+        fill_missing_values(file)        
+        monthly_average(file) # writing and adding monthly average sheet to file        
+        hourly_average(file) # writing and adding hourly average sheet to file
+        summary_statistics(file)
+        wb = openpyxl.load_workbook(file)
+        sheet = wb['Sheet1']
+        sheet.title='Report'
+        wb.save(file)
 
         # deleting all of the csv 30 day chunk files from the folder
         if getattr(sys, 'frozen', False): # finding file path to wherever GUI is stored
@@ -320,7 +332,9 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         if 'PRC' in df.columns:
             df = pd.pivot_table(df, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
         df = df.reset_index()
-        df.to_excel(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', sheet_name='Report') # writing initial report to an xlsx file
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name = 'Report') # writing initial report to an xlsx file
+        file = f'{output_file_path}/{market_run_id} {timestamp}.xlsx'
         fill_missing_values(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
         monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
         hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file

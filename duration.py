@@ -10,6 +10,8 @@ df = pd.read_excel('HASP 06-23-2025 1314.xlsx')
 # QUESTION: do we want an avg daily/monthly curve, or avg yearly, or total of the pull? Maybe create a macro of dates?
     # play around with it for now
 
+# having issues with percentage- goes over 100%
+
 df = df.sort_values('LMP', ascending=False) # sorting by price high to low
 print(df.info())
 duration_counts = df['LMP'].value_counts()

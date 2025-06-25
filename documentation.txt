@@ -120,6 +120,10 @@ Figured out how to add the summary statistics. It is on there, but it doesn't lo
 Updated sharepoint with version 2 (including basic analysis pages)
 (tonight: read up on load duration curves, and start mapping out how to graph)
 
+6/25-
+Dropped unimportant columns, changed sheet from days to hours below 0.
+For whatever reason, I still can't get my first sheet to rename. It's killing me.
+
 duration curves notes:
 - the x axis represents 100% of some sort of timeframe (a day, month, year, etc)
     - sort data by LMP, then count how many of each value, and what percent it takes of the curve 
@@ -132,9 +136,12 @@ duration curves notes:
 
 to do  
 - fix rounding 
-- show added pages to zoe and justin and get some feedback
-- add duration curve
 - rename sheet 1 again
+- add duration curve
+- put all times in MST - how to do that? will have to do before breaking out hours and minutes
+- change type of summary stats
+- heatmap with 12X24 averages
+
 - explore excel macros and add one for formatting on extra sheets (make it look nice with bolding and highlighting and such)
 - start gen weighted average (read resources and become familiar with math behind it)
 
