@@ -7,8 +7,11 @@ import pandas as pd
 import requests
 from zipfile import ZipFile
 from io import BytesIO
-from datetime import date, timedelta, time, datetime
+from datetime import timedelta, time, datetime
 import openpyxl
+import openpyxl
+from openpyxl import Workbook
+from openpyxl.chart import Reference, ScatterChart, Series
 import time
 import sys
 
@@ -25,8 +28,8 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         params = {
             "resultformat": 6, # should always be this- creates a CSV
             "queryname": queryname, # locational marginal prices
-            "startdatetime": f'{startdate}T00:00-0000', 
-            "enddatetime": f'{enddate}T00:00-0000', 
+            "startdatetime": f'{startdate}T07:00-0000',  # starting at the 7 hour for MST purposes
+            "enddatetime": f'{enddate}T07:00-0000', 
             "market_run_id": market_run_id,
             "version": version,  
             "node": node,
@@ -53,8 +56,14 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         valid_columns = [col for col in all_drop if col in df.columns]
         df = df.drop(columns=valid_columns) # dropping conditionally- if they are in the df, they are dropped. prevents errors. 
         df = df.sort_values(['INTERVALSTARTTIME_GMT']) # sorting by time/date
+
+        # change timezone here!
+
         df['INTERVALSTARTTIME_GMT'] = df['INTERVALSTARTTIME_GMT'].str.replace('-00:00', '').str.replace('T', ' ') # getting rid of seconds
         df['INTERVALENDTIME_GMT'] = df['INTERVALENDTIME_GMT'].str.replace('-00:00','').str.replace('T',' ') # getting rid of seconds
+        df['INTERVALSTARTTIME_GMT'] = pd.to_datetime(df['INTERVALSTARTTIME_GMT']) # shift 7 hours back
+        df['INTERVALENDTIME_GMT'] = pd.to_datetime(df['INTERVALENDTIME_GMT']) # shift 7 hours back
+
         # conditional cleaning
         if 'LMP_TYPE' in df.columns: # making LMP_TYPE more readable
                 df['LMP_TYPE'] = df['LMP_TYPE'].replace({'LMP': 'LMP', 'MCC': 'Congestion', 'MCE':'Energy', 'MCL': 'Loss', 'MGHG': 'Greenhouse Gas'})
@@ -64,6 +73,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df['VALUE'] = df['VALUE'].round(4)
         if 'PRC' in df.columns:# rounding FMM
             df['PRC'] = df['PRC'].round(4)
+
         # splitting date into smaller columns for readability and grouping
         df[['Year', 'Month','Day']] = df['INTERVALSTARTTIME_GMT'].str.split('-',expand=True)
         df[['Day', 'Time']] = df['Day'].str.split(' ',expand=True)
@@ -113,9 +123,9 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         result = result.sort_values('INTERVALSTARTTIME_GMT') # setting to original sorting
         # reordering columns 
         if 'Greenhouse Gas' in result.columns: 
-            result = result[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute','Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP' ]]
+            result = result[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute','LMP','Congestion', 'Energy', 'Loss', 'Greenhouse Gas' ]]
         else:
-            result = result[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute','Congestion', 'Energy', 'Loss', 'LMP' ]]
+            result = result[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'LMP','Congestion', 'Energy', 'Loss' ]]
         result.to_excel(filename) # should replace file with the filled version
 
     # monthly average sheet function (12x24 info)
@@ -145,7 +155,6 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
         
         count = (df_avg['LMP'] < 0).sum() # counting how many hours LMP is below 0
-        # chart logic here
 
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
             # writing hourly averages sheet
@@ -234,6 +243,44 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
                 row+=6 # break
         # maybe include a macro for readability formatting
 
+    def duration_chart(filename): 
+        # cleaning to get chart columns
+        df = pd.read_excel(filename)
+        df = df.sort_values('LMP', ascending=False) # sorting by price/LMP high to low
+        duration_counts = df['LMP'].value_counts() # counting how many there are of each LMP value
+        total_count = df['LMP'].value_counts().sum() # counting how many values total
+        df['duration_count'] = df['LMP'].map(duration_counts) # this represents how many there are of that specific value
+        df['percent'] = df['duration_count']/total_count # percentage value
+        chart_lmp = df[['LMP', 'percent']].drop_duplicates().copy() # making sure we aren't counting percents more than once (if a LMP value exists multiple times)
+        chart_lmp['xval'] = chart_lmp['percent'].cumsum() # cumulative sum adds the rows value to all the previous rows values
+        xval_map = dict(zip(chart_lmp['LMP'], chart_lmp['xval'])) # creating a map of new percentages?
+        df['xval'] = df['LMP'].map(xval_map) # adding to OG DF
+        df = df[['LMP', 'xval']] # limiting df to only the necessary columns
+
+        # writting to a sheet and hiding it 
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            df.to_excel(writer, sheet_name='Hidden Duration Chart Data', index=False) # writing data to new sheet
+        
+        wb = openpyxl.load_workbook(filename) # finding workbook with filename
+        ws = wb['Hidden Duration Chart Data'] # referencing
+        ws.sheet_state = 'hidden' # hiding the sheet
+
+        # referencing hidden sheet to create chart
+        chart = ScatterChart()
+        chart.title = 'LMP Duration Chart'
+        chart.y_axis.title = 'LMP $/MWhr'
+        chart.x_axis.title = 'Duration'
+        chart.legend = None
+        data_sheet = wb['Hidden Duration Chart Data']
+        xvalues = Reference(data_sheet, min_col=2, min_row=2, max_row=total_count+1)  # Assuming headers in row 1
+        yvalues = Reference(data_sheet, min_col=1, min_row=2, max_row=total_count+1)
+        series = Series(yvalues, xvalues, title_from_data=False)
+        chart.series.append(series)
+
+        sheet = wb['Hours Below 0'] # adding chart to below 0 sheet
+        sheet.add_chart(chart, 'B6')   
+        wb.save(filename) # saving workbook to original file name
+
 
     # user inputs map
     map = { # market name, market_run_id, query_name, version - needed for parameters
@@ -299,12 +346,13 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         
         # pushing to excel file, deleting csv chunks
         file = f'{output_file_path}/{market_run_id} {timestamp}.xlsx'
-        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl') as writer: 
+        with pd.ExcelWriter(file, engine='openpyxl') as writer: 
             df_combined.to_excel(writer, sheet_name = 'Report', index=False) # writing initial report to an xlsx file
         fill_missing_values(file)        
         monthly_average(file) # writing and adding monthly average sheet to file        
         hourly_average(file) # writing and adding hourly average sheet to file
         summary_statistics(file)
+        duration_chart(file)
         wb = openpyxl.load_workbook(file)
         sheet = wb['Sheet1']
         sheet.title='Report'
@@ -335,10 +383,15 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl') as writer:
             df.to_excel(writer, sheet_name = 'Report') # writing initial report to an xlsx file
         file = f'{output_file_path}/{market_run_id} {timestamp}.xlsx'
-        fill_missing_values(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
-        monthly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding monthly average sheet to file        
-        hourly_average(f'{output_file_path}/{market_run_id} {timestamp}.xlsx') # writing and adding hourly average sheet to file
-        summary_statistics(f'{output_file_path}/{market_run_id} {timestamp}.xlsx')
+        fill_missing_values(file)
+        monthly_average(file) # writing and adding monthly average sheet to file        
+        hourly_average(file) # writing and adding hourly average sheet to file
+        summary_statistics(file)
+        duration_chart(file)
+        wb = openpyxl.load_workbook(file)
+        sheet = wb['Sheet1']
+        sheet.title='Report'
+        wb.save(file)
 
         # deleting csv from folder
         if getattr(sys, 'frozen', False): # finding file path to wherever GUI is stored

@@ -121,8 +121,12 @@ Updated sharepoint with version 2 (including basic analysis pages)
 (tonight: read up on load duration curves, and start mapping out how to graph)
 
 6/25-
-Dropped unimportant columns, changed sheet from days to hours below 0.
-For whatever reason, I still can't get my first sheet to rename. It's killing me.
+Dropped unimportant columns, changed sheet from days to hours below 0, fixed rounding.
+Finally figured out how to fix report name! Yay! It has taken days.
+My duration curve is not an average day value, but just the pure data.
+Spent a lot of time today making the duration curve in python, and then using openpyxl to see it in excel. It is
+a weird module. I like how it looks, except I can't get the axes to automatically display. Oh well.
+
 
 duration curves notes:
 - the x axis represents 100% of some sort of timeframe (a day, month, year, etc)
@@ -135,15 +139,12 @@ duration curves notes:
 - need a new column with duration (add already accounted for percentages) - use a while loop?
 
 to do  
-- fix rounding 
-- rename sheet 1 again
-- add duration curve
+- put below 0 stuff in summary statistics (make a macro later so it looks fun! like a dashboard!)
 - put all times in MST - how to do that? will have to do before breaking out hours and minutes
 - change type of summary stats
 - heatmap with 12X24 averages
 
 - explore excel macros and add one for formatting on extra sheets (make it look nice with bolding and highlighting and such)
-- start gen weighted average (read resources and become familiar with math behind it)
 
 - research SPP/MISO/ERCOT/NYIO/PJM data, if it has an API, similarities, etc
     https://opensource.gridstatus.io/en/latest/Examples/spp/LMP%20Data.html 
