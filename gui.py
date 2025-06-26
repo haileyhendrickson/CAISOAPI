@@ -75,6 +75,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df['PRC'] = df['PRC'].round(4)
 
         # splitting date into smaller columns for readability and grouping
+        df['INTERVALSTARTTIME_GMT'] = df['INTERVALSTARTTIME_GMT'].astype(str) # changing start time from date to string so I can split it
         df[['Year', 'Month','Day']] = df['INTERVALSTARTTIME_GMT'].str.split('-',expand=True)
         df[['Day', 'Time']] = df['Day'].str.split(' ',expand=True)
         df[['Hour (GMT)','Minute', 'Seconds']] = df['Time'].str.split(':',expand=True)
@@ -345,6 +346,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df_combined = df_combined[['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
         
         # pushing to excel file, deleting csv chunks
+        os.makedirs(output_file_path, exist_ok=True) # making sure the directory exists?
         file = f'{output_file_path}/{market_run_id} {timestamp}.xlsx'
         with pd.ExcelWriter(file, engine='openpyxl') as writer: 
             df_combined.to_excel(writer, sheet_name = 'Report', index=False) # writing initial report to an xlsx file
@@ -381,7 +383,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df = pd.pivot_table(df, values='PRC', index=['INTERVALSTARTTIME_GMT', 'INTERVALENDTIME_GMT', 'NODE', 'Year', 'Month', 'Day', 'Hour (GMT)', 'Minute'], columns='LMP_TYPE')
         df = df.reset_index()
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name = 'Report') # writing initial report to an xlsx file
+            df.to_excel(writer, sheet_name = 'Report', index=False) # writing initial report to an xlsx file
         file = f'{output_file_path}/{market_run_id} {timestamp}.xlsx'
         fill_missing_values(file)
         monthly_average(file) # writing and adding monthly average sheet to file        
