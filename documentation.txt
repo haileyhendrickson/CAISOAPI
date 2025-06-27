@@ -133,6 +133,9 @@ Changing timezone to MST (and relabled columns appropriatley).
 Put Below 0 stuff into summary statistics and fixed those as well. 
 Started working on heatmap: there isn't a way to create a heatmap in python and put in in excel with openpyxl, but I could code a macro to do so.
 
+6/27-
+Added heatmap by adding in 12x24 df and then coloring it (openpyxl doesn't have a heatmap chart option)
+After adding heatmap to code, running into connection error (10054), which isn't a code problem, I think. Nothing will run. 
 
 to do  
 - heatmap with 12X24 averages

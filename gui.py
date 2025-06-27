@@ -14,6 +14,8 @@ from openpyxl import Workbook
 from openpyxl.chart import Reference, ScatterChart, Series
 import time
 import sys
+from openpyxl.formatting.rule import ColorScaleRule
+
 
 
 # all backend code
@@ -88,8 +90,15 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
     def fill_missing_values(filename):
         df = pd.read_excel(filename)
         # finding and creating rows for missing intervals
-        df['INTERVALSTARTTIME_MST'] = pd.to_datetime(df['INTERVALSTARTTIME_MST']).dt.floor('15min') # makes it some sort of set so I can subtact it later
-        full_range = pd.date_range(start=df['INTERVALSTARTTIME_MST'].min(), end=df['INTERVALSTARTTIME_MST'].max(), freq='15min') # finding all intervals I should have
+        if market_run_id == 'DAM':
+            df['INTERVALSTARTTIME_MST'] = pd.to_datetime(df['INTERVALSTARTTIME_MST']).dt.floor('60min') # makes it some sort of set so I can subtact it later
+            full_range = pd.date_range(start=df['INTERVALSTARTTIME_MST'].min(), end=df['INTERVALSTARTTIME_MST'].max(), freq='60min') # finding all intervals I should have
+        elif market_run_id == 'RTM':
+            df['INTERVALSTARTTIME_MST'] = pd.to_datetime(df['INTERVALSTARTTIME_MST']).dt.floor('5min') # makes it some sort of set so I can subtact it later
+            full_range = pd.date_range(start=df['INTERVALSTARTTIME_MST'].min(), end=df['INTERVALSTARTTIME_MST'].max(), freq='5min') # finding all intervals I should have
+        else: # HASP AND FFM
+            df['INTERVALSTARTTIME_MST'] = pd.to_datetime(df['INTERVALSTARTTIME_MST']).dt.floor('15min') # makes it some sort of set so I can subtact it later
+            full_range = pd.date_range(start=df['INTERVALSTARTTIME_MST'].min(), end=df['INTERVALSTARTTIME_MST'].max(), freq='15min') # finding all intervals I should have
         full_df = pd.DataFrame({'INTERVALSTARTTIME_MST': full_range}) # df for all intervals I need
         if 'Greenhouse Gas' in full_df.columns: # conditional logic for HASP
             result = full_df.merge( # combining data with full intervals, putting in nulls for vals in rows that had missing intervals 
@@ -104,7 +113,12 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
                 how='outer'
             )
         # filling in missing values
-        interval_end = result['INTERVALSTARTTIME_MST'] + pd.Timedelta(minutes=15) # finding starttime and adding 15 minutes
+        if market_run_id == 'DAM':
+            interval_end = result['INTERVALSTARTTIME_MST'] + pd.Timedelta(minutes=60) # finding starttime and adding 15 minutes
+        elif market_run_id == 'RTM':
+            interval_end = result['INTERVALSTARTTIME_MST'] + pd.Timedelta(minutes=5) # finding starttime and adding 15 minutes
+        else: # ffm and hasp
+            interval_end = result['INTERVALSTARTTIME_MST'] + pd.Timedelta(minutes=15) # finding starttime and adding 15 minutes
         result['INTERVALENDTIME_MST']=result['INTERVALENDTIME_MST'].fillna(interval_end) # filling in empty values
         result = result.sort_values(['INTERVALSTARTTIME_MST', 'NODE']) # making sure it is sorted by node so I can backfill
         result['NODE'] = result['NODE'].bfill() # backfilling node
@@ -134,35 +148,35 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
     # monthly average sheet function (12x24 info)
     def monthly_average(filename):
         df = pd.read_excel(filename)
-        if market_run_id == 'HASP': # doesn't have greenhouse gas
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
-            df_avg[['Congestion', 'Energy', 'Loss','LMP']] = df_avg[['Congestion', 'Energy', 'Loss','LMP']].round(4)
-            df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (MST)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
-        else:
+        if 'Greenhouse Gas' in df.columns: # doesn't have greenhouse gas
             df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
             df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']] = df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas' 'LMP']].round(4)
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (MST)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
+        else:
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
+            df_avg[['Congestion', 'Energy', 'Loss','LMP']] = df_avg[['Congestion', 'Energy', 'Loss','LMP']].round(4)
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (MST)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
             df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)       
 
     # hourly average sheet function
     def hourly_average(filename): # creating a new sheet in the same excel file for hourly averages
         df = pd.read_excel(filename)
-        if market_run_id == 'HASP': # doesn't have greenhouse gas
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean().round(4) # grouping
-            df_avg[['Congestion', 'Energy', 'Loss','LMP']] = df_avg[['Congestion', 'Energy', 'Loss','LMP']].round(4)
-            df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (MST)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
-        else:
+        if 'Greenhouse Gas' in df.columns: # doesn't have greenhouse gas
             df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean().round(4) # grouping
             df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']] = df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas' 'LMP']].round(4)            
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (MST)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
+        else:
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean().round(4) # grouping
+            df_avg[['Congestion', 'Energy', 'Loss','LMP']] = df_avg[['Congestion', 'Energy', 'Loss','LMP']].round(4)
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (MST)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         
         count = (df_avg['LMP'] < 0).sum() # counting how many hours LMP is below 0
 
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
             # writing hourly averages sheet
             df_avg.to_excel(writer, sheet_name='Hourly Average', index=False) # adding sheet to excel file
-            # writing below 0 sheet, using the hourly averages df
+            # writing summary statistics sheet, using the hourly averages df
             row = 13
             pd.DataFrame([['Number of hours LMP is below 0:']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row += 1
@@ -170,6 +184,21 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             row += 2 # adding a blank row in between
             pd.DataFrame([['Duration Curve']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row += 1
+
+        # heat map!
+        pivot = df.pivot_table(index='Month', columns='Hour (MST)', values='LMP', aggfunc='mean') # creating a new table section df
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            pivot.to_excel(writer, sheet_name='Hourly Average', startrow=2, startcol=12, index=False) # adding to hourly avg sheet
+
+        heatmap_range = 'M4:AJ16' # range of heatmap to color
+        color_scale_rule = ColorScaleRule(
+            start_type='min', start_value=None, start_color='0000FF00', # red for minimum value
+            end_type='max', end_value=None, end_color='00FF0000' # green for maximum value
+        )
+        wb = openpyxl.load_workbook(filename)
+        sheet = wb['Hourly Average']
+        sheet.conditional_formatting.add(heatmap_range, color_scale_rule)
+        wb.save(filename)
 
     # summary statistics sheet function
     def summary_statistics(filename): 

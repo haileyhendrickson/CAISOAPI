@@ -28,10 +28,10 @@ WEEK: (to be completed by the end of that week)
 2. finish project concept, baseline CAISO API query in python and data dictionary
 3. finish query bugs, build cleaning program, finish back-end
 4. push code to GUI of choice. finish “minimum viable product”, get feedback from consultants on usability
+5. Add to product from feedback, work on documentation
 
-5. Add to produt from feedback, work on documentation
+6. walk-through video, finish HMA report
 
-6. walk-through video, finish HMA report, (learn about different analyses: basis and gen weighted)
 7.
 8.
 9.

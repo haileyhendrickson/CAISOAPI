@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import openpyxl
+from openpyxl.formatting.rule import ColorScaleRule
+
 
 # hourly average sheet function
 def hourly_average(filename): # creating a new sheet in the same excel file for hourly averages
@@ -30,12 +33,19 @@ def hourly_average(filename): # creating a new sheet in the same excel file for 
         row += 1
 
     # heat map!
-    pivot = df.pivot_table(index='Month', columns='Hour (MST)', values='LMP', aggfunc='mean')
-    sns.heatmap(pivot, fmt=".1f", cmap="viridis")  # annot=True to show values      
-    plt.title("Average LMP by Month and Hour")
-    plt.xlabel("Hour")
-    plt.ylabel("Month")
-    plt.show()
+    pivot = df.pivot_table(index='Month', columns='Hour (MST)', values='LMP', aggfunc='mean') # creating a new table section df
+    with pd.ExcelWriter(f'{output_file_path}/{filename}', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+        pivot.to_excel(writer, sheet_name='Hourly Average', startrow=2, startcol=12, index=False) # adding to hourly avg sheet
+
+    heatmap_range = 'M4:AJ16' # range of heatmap to color
+    color_scale_rule = ColorScaleRule(
+        start_type='min', start_value=None, start_color='0000FF00', # red for minimum value
+        end_type='max', end_value=None, end_color='00FF0000' # green for maximum value
+    )
+    wb = openpyxl.load_workbook(filename)
+    sheet = wb['Hourly Average']
+    sheet.conditional_formatting.add(heatmap_range, color_scale_rule)
+    wb.save(filename)
 
 output_file_path = 'C:/Users/hhendrickson/es/caiso'
 market_run_id = 'HASP'
