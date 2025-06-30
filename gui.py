@@ -9,13 +9,13 @@ from zipfile import ZipFile
 from io import BytesIO
 from datetime import timedelta, time, datetime
 import openpyxl
-import openpyxl
 from openpyxl import Workbook
-from openpyxl.chart import Reference, ScatterChart, Series
 import time
 import sys
-from openpyxl.formatting.rule import ColorScaleRule
-
+from openpyxl.styles import Font
+import matplotlib.pyplot as plt
+import seaborn as sns
+from PIL import Image
 
 
 # all backend code
@@ -149,13 +149,13 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
     def monthly_average(filename):
         df = pd.read_excel(filename)
         if 'Greenhouse Gas' in df.columns: # doesn't have greenhouse gas
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df.groupby(['NODE', 'Year', 'Month'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() # grouping
             df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']] = df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas' 'LMP']].round(4)
-            df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (MST)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']] # reordering column names
         else:
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
+            df_avg = df.groupby(['NODE', 'Year', 'Month'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() # grouping
             df_avg[['Congestion', 'Energy', 'Loss','LMP']] = df_avg[['Congestion', 'Energy', 'Loss','LMP']].round(4)
-            df_avg = df_avg[['NODE', 'Year', 'Month', 'Hour (MST)', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
             df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)       
 
@@ -186,19 +186,18 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             row += 1
 
         # heat map!
-        pivot = df.pivot_table(index='Month', columns='Hour (MST)', values='LMP', aggfunc='mean') # creating a new table section df
-        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-            pivot.to_excel(writer, sheet_name='Hourly Average', startrow=2, startcol=12, index=False) # adding to hourly avg sheet
-
-        heatmap_range = 'M4:AJ16' # range of heatmap to color
-        color_scale_rule = ColorScaleRule(
-            start_type='min', start_value=None, start_color='0000FF00', # red for minimum value
-            end_type='max', end_value=None, end_color='00FF0000' # green for maximum value
-        )
+        pivot = df.pivot_table(index='Hour (MST)', columns='Month', values='LMP', aggfunc='mean') # creating a new table section df
+        sns.heatmap(pivot, annot=True, cmap='RdYlGn_r', fmt='.3g', cbar_kws={'label':'$/MWH'}) # creating heatmap
+        plt.title(f'12x24 Heatmap {node}')
+        plt.savefig(f'{output_file_path}/heatmap.png') # saving png
         wb = openpyxl.load_workbook(filename)
         sheet = wb['Hourly Average']
-        sheet.conditional_formatting.add(heatmap_range, color_scale_rule)
+        img_path = f'{output_file_path}/heatmap.png'
+        from openpyxl.drawing.image import Image as XLImage # opening excel file
+        img = XLImage(img_path)
+        sheet.add_image(img, 'L3') # adding chart image to sheet
         wb.save(filename)
+        plt.close() # closing plt so it doesn't combine with other chart later
 
     # summary statistics sheet function
     def summary_statistics(filename): 
@@ -242,21 +241,21 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         ws = wb['Hidden Duration Chart Data'] # referencing
         ws.sheet_state = 'hidden' # hiding the sheet
 
-        # referencing hidden sheet to create chart
-        chart = ScatterChart()
-        chart.title = 'LMP Duration Chart'
-        chart.y_axis.title = 'LMP $/MWhr'
-        chart.x_axis.title = 'Duration'
-        chart.legend = None
-        data_sheet = wb['Hidden Duration Chart Data']
-        xvalues = Reference(data_sheet, min_col=2, min_row=2, max_row=total_count+1)  # Assuming headers in row 1
-        yvalues = Reference(data_sheet, min_col=1, min_row=2, max_row=total_count+1)
-        series = Series(yvalues, xvalues, title_from_data=False)
-        chart.series.append(series)
+        sheet = wb['Summary Statistics'] # opening summary stats sheet
+        sheet['A1'].font = Font(bold=True) # bolding titles
+        sheet['A14'].font = Font(bold=True)
+        sheet['A17'].font = Font(bold=True)        
+        plt.scatter(df['xval'], df['LMP'], s=3) # creating duration chart using a 
+        plt.axhline(y=0, color ='black') # creating 0 axis line
+        plt.title(f'Duration Chart {node}') 
+        plt.savefig(f'{output_file_path}/durationchart.png') # creating an image of the chart
 
-        sheet = wb['Summary Statistics'] # adding chart to below 0 sheet
-        sheet.add_chart(chart, 'B19')   
+        img_path2 = f'{output_file_path}/durationchart.png' # making image path
+        from openpyxl.drawing.image import Image as XLImage # writing to excel
+        img2 = XLImage(img_path2)
+        sheet.add_image(img2, 'B19') # adding chart image to sheet
         wb.save(filename) # saving workbook to original file name
+        plt.close()
 
 
     # user inputs map

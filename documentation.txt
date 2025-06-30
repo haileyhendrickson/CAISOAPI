@@ -135,17 +135,23 @@ Started working on heatmap: there isn't a way to create a heatmap in python and 
 
 6/27-
 Added heatmap by adding in 12x24 df and then coloring it (openpyxl doesn't have a heatmap chart option)
-After adding heatmap to code, running into connection error (10054), which isn't a code problem, I think. Nothing will run. 
+After adding heatmap to code, running into connection error (10054), which isn't a code problem, I think. Comes up with this error occasionally.
+
+6/30-
+Having more problems with 10054. It only happens sometimes, but I have no idea why. I think I might be limited from CAISO bc of 
+the high quantity of requests in the last few weeks (esp last week). It isn't because of my code (as far as I can tell)
+Met with Zoe and decided that it is easier and looks nicer to include python screenshots instead of excel charts being added.
+
 
 to do  
-- heatmap with 12X24 averages
-- explore excel macros and add one for formatting on extra sheets (make it look nice with bolding and highlighting and such)
-
-- research SPP/MISO/ERCOT/NYIO/PJM data, if it has an API, similarities, etc
-    https://opensource.gridstatus.io/en/latest/Examples/spp/LMP%20Data.html 
+- fix 10054 error (wait for email?) 
 
 
 final steps: (These will need to be done every time changes are made to the gui)
 - destroy and rebuild gui with changes (for nodes, other)
 - pyinstaller --onefile --windowed gui.py (bash command)
 - put on sharepoint
+
+nodes 
+0096WD_7_N001
+PALOVRDE_5_N101
