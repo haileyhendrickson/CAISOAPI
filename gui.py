@@ -198,6 +198,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         sheet.add_image(img, 'L3') # adding chart image to sheet
         wb.save(filename)
         plt.close() # closing plt so it doesn't combine with other chart later
+        os.remove(img_path) # removing png from folder
 
     # summary statistics sheet function
     def summary_statistics(filename): 
@@ -256,6 +257,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         sheet.add_image(img2, 'B19') # adding chart image to sheet
         wb.save(filename) # saving workbook to original file name
         plt.close()
+        os.remove(img_path2) # removing png from folder
 
 
     # user inputs map
