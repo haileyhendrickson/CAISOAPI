@@ -9,13 +9,12 @@ from zipfile import ZipFile
 from io import BytesIO
 from datetime import timedelta, time, datetime
 import openpyxl
-from openpyxl import Workbook
+# from openpyxl import Workbook
 import time
 import sys
 from openpyxl.styles import Font
 import matplotlib.pyplot as plt
 import seaborn as sns
-from PIL import Image
 
 
 # all backend code
@@ -158,6 +157,21 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Congestion', 'Energy', 'Loss', 'LMP']] # reordering column names
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer: # adding sheet to excel file
             df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)       
+        plt.plot(df_avg['Month'], df_avg['LMP']) # creating monthly average line chart
+        plt.title(f'Monthly Average LMP {node}')
+        plt.ylabel('Avg $/MWH')
+        plt.xlabel('Month')
+        plt.savefig(f'{output_file_path}/monthlyline.png') # saving png
+        wb = openpyxl.load_workbook(filename)
+        sheet = wb['Monthly Average']
+        img_path = f'{output_file_path}/monthlyline.png'
+        from openpyxl.drawing.image import Image as XLImage
+        img = XLImage(img_path)
+        sheet.add_image(img, 'I2') # adding png to sheet
+        wb.save(filename) # saving workbook with added pngs
+        plt.close() # closing plt so it doesn't combine with other chart later
+        os.remove(img_path) # removing png from folder
+
 
     # hourly average sheet function
     def hourly_average(filename): # creating a new sheet in the same excel file for hourly averages
@@ -183,7 +197,9 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             pd.DataFrame([[count]]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row += 2 # adding a blank row in between
             pd.DataFrame([['Duration Curve']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
+            pd.DataFrame([['Lowest 5% Zoom']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, startcol=12, header=False, index=False)
             row += 1
+
 
         # heat map!
         pivot = df.pivot_table(index='Hour (MST)', columns='Month', values='LMP', aggfunc='mean') # creating a new table section df
@@ -217,6 +233,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             desc.to_excel(writer, sheet_name = 'Summary Statistics', startrow=row, header=True, index=True) # writing summary statistics to df
             row += 13 # adding space in between  
 
+
         # maybe include a macro for readability formatting
 
     # duration chart function
@@ -245,19 +262,39 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         sheet = wb['Summary Statistics'] # opening summary stats sheet
         sheet['A1'].font = Font(bold=True) # bolding titles
         sheet['A14'].font = Font(bold=True)
-        sheet['A17'].font = Font(bold=True)        
+        sheet['A17'].font = Font(bold=True)      
+        sheet['M17'].font = Font(bold=True)
         plt.scatter(df['xval'], df['LMP'], s=3) # creating duration chart using a 
         plt.axhline(y=0, color ='black') # creating 0 axis line
         plt.title(f'Duration Chart {node}') 
+        plt.ylabel('LMP')
+        plt.xlabel('Duration')
         plt.savefig(f'{output_file_path}/durationchart.png') # creating an image of the chart
-
         img_path2 = f'{output_file_path}/durationchart.png' # making image path
         from openpyxl.drawing.image import Image as XLImage # writing to excel
         img2 = XLImage(img_path2)
         sheet.add_image(img2, 'B19') # adding chart image to sheet
-        wb.save(filename) # saving workbook to original file name
         plt.close()
-        os.remove(img_path2) # removing png from folder
+
+        # lowest 5% zoom
+        last5index = int(0.95*len(df)) # finding last 5% of data
+        plt.scatter(df['xval'], df['LMP'], s=3)
+        x_min = df['xval'].iloc[last5index]  # First x-value in last 5%
+        x_max = df['xval'].iloc[-1]  # Last x-value
+        plt.xlim(x_min,x_max) # creating the zoomed x axis
+        plt.axhline(y=0, color='black') # adding in 0 line for reference
+        plt.title(f'Lowest 5% Zoom {node}')
+        plt.ylabel('LMP')
+        plt.xlabel('Duration')
+        plt.savefig(f'{output_file_path}/lowest5zoom.png') # saving png
+        img_path = f'{output_file_path}/lowest5zoom.png'
+        from openpyxl.drawing.image import Image as XLImage
+        img = XLImage(img_path)
+        sheet.add_image(img, 'L19') # adding png to sheet
+        plt.close()
+        wb.save(filename) # saving workbook to original file name
+        os.remove(img_path2) # removing pngs from folder space
+        os.remove(img_path)
 
 
     # user inputs map
@@ -323,7 +360,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df_combined = df_combined[['INTERVALSTARTTIME_MST', 'INTERVALENDTIME_MST', 'NODE', 'Year', 'Month', 'Day', 'Hour (MST)', 'Minute', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]
         
         # pushing to excel file, deleting csv chunks
-        os.makedirs(output_file_path, exist_ok=True) # making sure the directory exists?
+        # os.makedirs(output_file_path, exist_ok=True) # making sure the directory exists?
         file = f'{output_file_path}/{market_run_id} {timestamp}.xlsx'
         with pd.ExcelWriter(file, engine='openpyxl') as writer: 
             df_combined.to_excel(writer, sheet_name = 'Report', index=False) # writing initial report to an xlsx file

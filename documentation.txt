@@ -142,6 +142,9 @@ Having more problems with 10054. It only happens sometimes, but I have no idea w
 the high quantity of requests in the last few weeks (esp last week). It isn't because of my code (as far as I can tell)
 Met with Zoe and decided that it is easier and looks nicer to include python screenshots instead of excel charts being added.
 
+7/1-
+
+
 
 to do  
 - fix 10054 error (wait for email?) 
