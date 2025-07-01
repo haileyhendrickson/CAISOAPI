@@ -9,7 +9,6 @@ from zipfile import ZipFile
 from io import BytesIO
 from datetime import timedelta, time, datetime
 import openpyxl
-# from openpyxl import Workbook
 import time
 import sys
 from openpyxl.styles import Font
@@ -172,7 +171,6 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         plt.close() # closing plt so it doesn't combine with other chart later
         os.remove(img_path) # removing png from folder
 
-
     # hourly average sheet function
     def hourly_average(filename): # creating a new sheet in the same excel file for hourly averages
         df = pd.read_excel(filename)
@@ -203,9 +201,11 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
 
         # heat map!
         pivot = df.pivot_table(index='Hour (MST)', columns='Month', values='LMP', aggfunc='mean') # creating a new table section df
-        sns.heatmap(pivot, annot=True, cmap='RdYlGn_r', fmt='.3g', cbar_kws={'label':'$/MWH'}) # creating heatmap
+        plt.figure(figsize=(10,8))
+        sns.heatmap(pivot, annot=True, cmap='RdYlGn_r', fmt='.0f', cbar_kws={'label':'$/MWH'}) # creating heatmap
         plt.title(f'12x24 Heatmap {node}')
         plt.savefig(f'{output_file_path}/heatmap.png') # saving png
+        plt.close() # closing plt so it doesn't combine with other chart later        
         wb = openpyxl.load_workbook(filename)
         sheet = wb['Hourly Average']
         img_path = f'{output_file_path}/heatmap.png'
@@ -213,7 +213,6 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         img = XLImage(img_path)
         sheet.add_image(img, 'L3') # adding chart image to sheet
         wb.save(filename)
-        plt.close() # closing plt so it doesn't combine with other chart later
         os.remove(img_path) # removing png from folder
 
     # summary statistics sheet function
@@ -264,34 +263,38 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         sheet['A14'].font = Font(bold=True)
         sheet['A17'].font = Font(bold=True)      
         sheet['M17'].font = Font(bold=True)
+        plt.figure()
         plt.scatter(df['xval'], df['LMP'], s=3) # creating duration chart using a 
         plt.axhline(y=0, color ='black') # creating 0 axis line
         plt.title(f'Duration Chart {node}') 
-        plt.ylabel('LMP')
-        plt.xlabel('Duration')
+        plt.ylabel('$/MWh')
+        plt.xlabel('% of Time')
+        plt.grid()
         plt.savefig(f'{output_file_path}/durationchart.png') # creating an image of the chart
+        plt.close()
         img_path2 = f'{output_file_path}/durationchart.png' # making image path
         from openpyxl.drawing.image import Image as XLImage # writing to excel
         img2 = XLImage(img_path2)
         sheet.add_image(img2, 'B19') # adding chart image to sheet
-        plt.close()
 
         # lowest 5% zoom
         last5index = int(0.95*len(df)) # finding last 5% of data
+        plt.figure()
         plt.scatter(df['xval'], df['LMP'], s=3)
         x_min = df['xval'].iloc[last5index]  # First x-value in last 5%
         x_max = df['xval'].iloc[-1]  # Last x-value
         plt.xlim(x_min,x_max) # creating the zoomed x axis
         plt.axhline(y=0, color='black') # adding in 0 line for reference
         plt.title(f'Lowest 5% Zoom {node}')
-        plt.ylabel('LMP')
-        plt.xlabel('Duration')
+        plt.ylabel('$/MWh')
+        plt.xlabel('% of Time')
+        plt.grid()
         plt.savefig(f'{output_file_path}/lowest5zoom.png') # saving png
+        plt.close()
         img_path = f'{output_file_path}/lowest5zoom.png'
         from openpyxl.drawing.image import Image as XLImage
         img = XLImage(img_path)
         sheet.add_image(img, 'L19') # adding png to sheet
-        plt.close()
         wb.save(filename) # saving workbook to original file name
         os.remove(img_path2) # removing pngs from folder space
         os.remove(img_path)
