@@ -160,6 +160,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         plt.title(f'Monthly Average LMP {node}')
         plt.ylabel('Avg $/MWH')
         plt.xlabel('Month')
+        plt.grid()
         plt.savefig(f'{output_file_path}/monthlyline.png') # saving png
         wb = openpyxl.load_workbook(filename)
         sheet = wb['Monthly Average']
