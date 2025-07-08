@@ -36,3 +36,6 @@ Download .exe file to local machine, open it, and enjoy!
 - v2.0: Added summary and analysis pages
 - v2.1: Tweaked analysis pages for improved insights
 - v2.2: Added data visualizations
+
+## License
+This project is licensed under the [MIT License](LICENSE).
