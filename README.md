@@ -1,21 +1,30 @@
-# CAISOAPI PROGRAM
+# CAISOAPI
 
-Internship project, creating a program to pull various price reports from the CAISO OASIS API (oasis.caiso.com). The purpose of the program is for simplified and more efficient data pulling for consultants and analysts at Energy Strategies.
+A GUI-based Python tool to query and visualize data from the CAISO API. The program efficiently queries 4 different LMP reports from https://oasis.caiso.com. These include: Day Ahead Market (DAM), Five Minute Market (FMM), Hour Ahead Market (HASP), and the Real Time Market (RTM). This program queries the data (for any date range) and formats it appropriately.  
 
-CAISO API TOOL.exe is a program that efficiently queries 4 different LMP reports from https://oasis.caiso.com. These include: Day Ahead Market (DAM), Five Minute Market (FMM), Hour Ahead Market (HASP), and the Real Time Market (RTM). This program queries the data (for any date range) and formats it appropriately.  
+## 🔧 Features
+- Select date ranges
+- Download and extract zipped data
+- View data visualizations (e.g., top 5% zoom charts)
+- Export processed Excel files
 
-Running on a Local Machine:
-python -m venv venv  # create a new env
-source venv/Scripts/activate  # activate env
-pip install -r requirements.txt  # install dependencies
+## 📦 Installation
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/haileyhendrickson/CAISOAPI.git
+   cd CAISOAPI
+
+## Use
+- download .exe file to local machine, open it, and enjoy!
+
+## Running on a Local Machine:
+- python -m venv venv  # create a new env
+- source venv/Scripts/activate  # activate env
+- pip install -r requirements.txt  # install dependencies
 
 
-Installation 
-- Download CAISO API TOOL.exe to your local machine and click to open.  After initial download, navigate to folder location for use. NOTE: The program will occasionally update (will be labeled with a version number). It only needs to be downloaded once each time it updates, then just navigate to its place in the folder to use it. 
-- Input your desired report variables and submit. 
-- The excel file with the report will automatically generate in your chosen file destination once finished. 
-
-Notes for use 
+## Notes for use 
 - Separate multiple nodes with a comma. 
 - Each requested report will include the actual report, the monthly average, the hourly average, and summary statistics.  
 - Please be patient while the program is running. Some reports are slow (ex: RTM) 
@@ -23,15 +32,8 @@ Notes for use
 
 Last updated: July 2025 (version 2.2) 
 
-Version History 
+## Version History 
 - Version 1: Basic Program to call reports 
 - Version 2: Added 3 new pages for summary and analysis 
 - Version 2.1: tweaking of analysis pages 
 - Version 2.2: added visualizations 
-
-Files in GitHub:
-- For GUI: use gui.py, or gui.exe if python libraries and extensions are not installed
-- Backend(API) code: backend.py
-- Detailed documentation: documentation.txt (includes daily log and processes)
-- Data dictionary: Notes about each report type under the 'prices' tab at the CASIO OASIS site. 
-- All other files are part of the creation process, including learning and testing new python skills.
