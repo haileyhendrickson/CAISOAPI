@@ -2,16 +2,28 @@
 
 Internship project, creating a program to pull various price reports from the CAISO OASIS API (oasis.caiso.com). The purpose of the program is for simplified and more efficient data pulling for consultants and analysts at Energy Strategies.
 
-Installation
-- Download gui.exe to your local machine, and click to open.
-- Find dist folder and navigate to gui.exe
-- The GUI/Program will open, and you can input your desired report variables.
-- The excel file with the report will automatically generate in your chosen file destination once finished.
+CAISO API TOOL.exe is a program that efficiently queries 4 different LMP reports from https://oasis.caiso.com. These include: Day Ahead Market (DAM), Five Minute Market (FMM), Hour Ahead Market (HASP), and the Real Time Market (RTM). This program queries the data (for any date range) and formats it appropriately.  
 
-Notes for use:
-- Separate multiple nodes with a comma.
-- All times are set in GMT.
-- Each requested report will include the actual report, and the hourly averages. (DAM will be the same, as it is already an hourly report).
+ 
+
+Installation 
+- Download CAISO API TOOL.exe to your local machine and click to open.  After initial download, navigate to folder location for use. NOTE: The program will occasionally update (will be labeled with a version number). It only needs to be downloaded once each time it updates, then just navigate to its place in the folder to use it. 
+- Input your desired report variables and submit. 
+- The excel file with the report will automatically generate in your chosen file destination once finished. 
+
+Notes for use 
+- Separate multiple nodes with a comma. 
+- Each requested report will include the actual report, the monthly average, the hourly average, and summary statistics.  
+- Please be patient while the program is running. Some reports are slow (ex: RTM) 
+- While the program is running, partial files will appear in the same folder as the program but will be deleted after it is finished running. 
+
+Last updated: July 2025 (version 2.2) 
+
+Version History 
+- Version 1: Basic Program to call reports 
+- Version 2: Added 3 new pages for summary and analysis 
+- Version 2.1: tweaking of analysis pages 
+- Version 2.2: added visualizations 
 
 Files in GitHub:
 - For GUI: use gui.py, or gui.exe if python libraries and extensions are not installed
@@ -19,16 +31,3 @@ Files in GitHub:
 - Detailed documentation: documentation.txt (includes daily log and processes)
 - Data dictionary: Notes about each report type under the 'prices' tab at the CASIO OASIS site. 
 - All other files are part of the creation process, including learning and testing new python skills.
-
-Last updated: June 2025
-
-Workflow:
-WEEK: (to be completed by the end of that week)
-1. energy market/company research and orientation
-2. finish project concept, baseline CAISO API query in python and data dictionary
-3. finish query bugs, build cleaning program, finish back-end
-4. push code to GUI of choice. finish “minimum viable product”, get feedback from consultants on usability
-5. Add to product from feedback, work on documentation.
-6. walk-through video, finish HMA report
-
-
