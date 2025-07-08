@@ -4,6 +4,7 @@ from tkinter import *
 from tkcalendar import Calendar
 from customtkinter import *
 import pandas as pd 
+import numpy as np
 import requests
 from zipfile import ZipFile
 from io import BytesIO
@@ -11,7 +12,7 @@ from datetime import timedelta, time, datetime
 import openpyxl
 import time
 import sys
-from openpyxl.styles import Font
+from openpyxl.styles import Font, numbers
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -156,12 +157,15 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)       
         plt.plot(df_avg['Month'], df_avg['LMP']) # creating monthly average line chart
         plt.title(f'Monthly Average LMP {node}')
-        plt.ylabel('Avg $/MWH')
+        plt.ylabel('Avg $/MWh')
         plt.xlabel('Month')
         plt.grid()
         plt.savefig(f'{output_file_path}/monthlyline.png') # saving png
         wb = openpyxl.load_workbook(filename)
         sheet = wb['Monthly Average']
+        for row in sheet.iter_rows(min_col=4, max_col=10, min_row=2):  # min_row=2 to skip header
+            for cell in row:
+                cell.number_format = '0.00'
         img_path = f'{output_file_path}/monthlyline.png'
         from openpyxl.drawing.image import Image as XLImage
         img = XLImage(img_path)
@@ -194,7 +198,6 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             pd.DataFrame([[count]]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
             row += 2 # adding a blank row in between
             pd.DataFrame([['Duration Curve']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, header=False, index=False)
-            pd.DataFrame([['Lowest 5% Zoom']]).to_excel(writer, sheet_name = 'Summary Statistics', startrow = row, startcol=12, header=False, index=False)
             row += 1
 
 
@@ -207,6 +210,9 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         plt.close() # closing plt so it doesn't combine with other chart later        
         wb = openpyxl.load_workbook(filename)
         sheet = wb['Hourly Average']
+        for row in sheet.iter_rows(min_col=6, max_col=10, min_row=2):  # min_row=2 to skip header
+            for cell in row:
+                cell.number_format = '0.00'
         img_path = f'{output_file_path}/heatmap.png'
         from openpyxl.drawing.image import Image as XLImage # opening excel file
         img = XLImage(img_path)
@@ -222,6 +228,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         else:
             cols = ['Congestion', 'Energy', 'Loss', 'LMP']
         desc=df[cols].describe() # finding what I want to display
+        desc = desc.round(4) # rounding
 
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer: # adding sheet to excel file
             # summary statistics for 4 elements of LMP
@@ -231,8 +238,12 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
             desc.to_excel(writer, sheet_name = 'Summary Statistics', startrow=row, header=True, index=True) # writing summary statistics to df
             row += 13 # adding space in between  
 
-
-        # maybe include a macro for readability formatting
+        wb = openpyxl.load_workbook(filename)
+        sheet = wb['Summary Statistics']
+        for row in sheet.iter_rows(min_col=2, max_col=5, min_row=3):  # min_row=2 to skip header
+            for cell in row:
+                cell.number_format = '0.00'
+        wb.save(filename)
 
     # duration chart function
     def duration_chart(filename): 
@@ -261,6 +272,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         sheet['A14'].font = Font(bold=True)
         sheet['A17'].font = Font(bold=True)      
         sheet['M17'].font = Font(bold=True)
+
         plt.figure()
         plt.scatter(df['xval'], df['LMP'], s=3) # creating duration chart using a 
         plt.axhline(y=0, color ='black') # creating 0 axis line
@@ -276,12 +288,9 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         sheet.add_image(img2, 'B19') # adding chart image to sheet
 
         # lowest 5% zoom
-        last5index = int(0.95*len(df)) # finding last 5% of data
+        last5 = df.tail(int(len(df)*.05))        
         plt.figure()
-        plt.scatter(df['xval'], df['LMP'], s=3)
-        x_min = df['xval'].iloc[last5index]  # First x-value in last 5%
-        x_max = df['xval'].iloc[-1]  # Last x-value
-        plt.xlim(x_min,x_max) # creating the zoomed x axis
+        plt.scatter(last5['xval'], last5['LMP'], s=3)
         plt.axhline(y=0, color='black') # adding in 0 line for reference
         plt.title(f'Lowest 5% Zoom {node}')
         plt.ylabel('$/MWh')
@@ -292,10 +301,28 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         img_path = f'{output_file_path}/lowest5zoom.png'
         from openpyxl.drawing.image import Image as XLImage
         img = XLImage(img_path)
-        sheet.add_image(img, 'L19') # adding png to sheet
+        sheet.add_image(img, 'K46') # adding png to sheet
+
+        # highest 5% zoom
+        first5 = df.head(int(len(df)*.05))        
+        plt.figure()
+        plt.scatter(first5['xval'], first5['LMP'], s=3)
+        plt.axhline(y=0, color='black') # adding in 0 line for reference
+        plt.title(f'Highest 5% Zoom {node}')
+        plt.ylabel('$/MWh')
+        plt.xlabel('% of Time')
+        plt.grid()
+        plt.savefig(f'{output_file_path}/highest5zoom.png') # saving png
+        plt.close()
+        img_path3 = f'{output_file_path}/highest5zoom.png'
+        from openpyxl.drawing.image import Image as XLImage
+        img = XLImage(img_path3)
+        sheet.add_image(img, 'B46') # adding png to sheet
+
         wb.save(filename) # saving workbook to original file name
         os.remove(img_path2) # removing pngs from folder space
         os.remove(img_path)
+        os.remove(img_path3)
 
 
     # user inputs map
@@ -303,7 +330,7 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
         ('DAM'): ('DAM', 'PRC_LMP', 1), 
         ('RTM'): ('RTM', 'PRC_INTVL_LMP', 3),
         ('HASP'): ('HASP', 'PRC_HASP_LMP', 1),
-        ('FFM'): ('RTPD', 'PRC_RTPD_LMP', 2,), 
+        ('FMM'): ('RTPD', 'PRC_RTPD_LMP', 2,), 
     }
     
     market_run_id, queryname, version = map.get((market_run_id), ('unknown')) # getting variables from map based on user input
@@ -369,6 +396,9 @@ def backend(market_run_id, startdate, enddate): # Pulls, cleans, and formats dat
     duration_chart(file)
     wb = openpyxl.load_workbook(file)
     sheet = wb['Sheet1']
+    for row in sheet.iter_rows(min_col=10, max_col=14, min_row=2):  # min_row=2 to skip header
+        for cell in row:
+            cell.number_format = '0.00'
     sheet.title='Report'
     wb.save(file)
 
@@ -443,7 +473,7 @@ enddate = None
 
 # widgets
 MRID_label = CTkLabel(root, text = 'Market Type:', font=('Arial',15), text_color='#04033A')
-MRIDDropdown = CTkComboBox(master=root, values=['DAM', 'RTM', 'HASP', 'FFM'], command=update_report_lbl)
+MRIDDropdown = CTkComboBox(master=root, values=['DAM', 'HASP','RTM', 'FMM'], command=update_report_lbl)
 
 report_lbl = CTkLabel(root, text = 'Locational Marginal Prices', font=('Arial',15), text_color='#04033A')
 
