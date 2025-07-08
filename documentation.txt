@@ -147,6 +147,10 @@ Added a line chart for monthly average, and a zoomed in last 5% chart (based on 
 Also fixed a few small formatting things. The 10054 error seems to have fixed itself, which is great. 
 Sent to Justin for final feedback, pending that I can make the video and publish.
 
+7/8-
+Working on condensing code. Deleted conditional statement for < 30 days
+Discovered that the last day isn't pulling! Got that fixed up, reuploaded to sharepoint.
+
 to do  
 - publish video, instructions, and final GUI on sharepoint and share with team!
 - finish HMA report
