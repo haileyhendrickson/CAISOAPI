@@ -16,7 +16,7 @@ A GUI-based Python tool to query and visualize data from the CAISO API. The prog
    cd CAISOAPI
 
 ## Use
-- download .exe file to local machine, open it, and enjoy!
+Download .exe file to local machine, open it, and enjoy!
 
 ## Running on a Local Machine:
 - python -m venv venv  # create a new env
@@ -30,9 +30,7 @@ A GUI-based Python tool to query and visualize data from the CAISO API. The prog
 - Please be patient while the program is running. Some reports are slow (ex: RTM) 
 - While the program is running, partial files will appear in the same folder as the program but will be deleted after it is finished running. 
 
-Last updated: July 2025 (version 2.2) 
-
-## Version History 
+## Version History -- Last updated: July 2025 (version 2.2) 
 - Version 1: Basic Program to call reports 
 - Version 2: Added 3 new pages for summary and analysis 
 - Version 2.1: tweaking of analysis pages 
