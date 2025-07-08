@@ -4,7 +4,11 @@ Internship project, creating a program to pull various price reports from the CA
 
 CAISO API TOOL.exe is a program that efficiently queries 4 different LMP reports from https://oasis.caiso.com. These include: Day Ahead Market (DAM), Five Minute Market (FMM), Hour Ahead Market (HASP), and the Real Time Market (RTM). This program queries the data (for any date range) and formats it appropriately.  
 
- 
+Running on a Local Machine:
+python -m venv venv  # create a new env
+source venv/Scripts/activate  # activate env
+pip install -r requirements.txt  # install dependencies
+
 
 Installation 
 - Download CAISO API TOOL.exe to your local machine and click to open.  After initial download, navigate to folder location for use. NOTE: The program will occasionally update (will be labeled with a version number). It only needs to be downloaded once each time it updates, then just navigate to its place in the folder to use it. 
