@@ -1,8 +1,0 @@
-tkcalendar
-customtkinter
-pandas
-numpy
-requests
-openpyxl
-matplotlib
-seaborn
