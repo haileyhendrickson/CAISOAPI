@@ -25,13 +25,14 @@ Download .exe file to local machine, open it, and enjoy!
 
 
 ## Notes for use 
-- Separate multiple nodes with a comma. 
-- Each requested report will include the actual report, the monthly average, the hourly average, and summary statistics.  
-- Please be patient while the program is running. Some reports are slow (ex: RTM) 
-- While the program is running, partial files will appear in the same folder as the program but will be deleted after it is finished running. 
+- Separate multiple nodes with a comma (e.g., NODE1,NODE2,NODE3).
+- Each report query returns the raw data, monthly averages, hourly averages, and summary statistics.
+- Please be patient; some reports, especially RTM, may take longer to process.
+- Temporary partial files will appear during data retrieval but are deleted when processing completes.
+
 
 ## Version History -- Last updated: July 2025 (version 2.2) 
-- Version 1: Basic Program to call reports 
-- Version 2: Added 3 new pages for summary and analysis 
-- Version 2.1: tweaking of analysis pages 
-- Version 2.2: added visualizations 
+- v1.0: Initial release - basic report retrieval
+- v2.0: Added summary and analysis pages
+- v2.1: Tweaked analysis pages for improved insights
+- v2.2: Added data visualizations
