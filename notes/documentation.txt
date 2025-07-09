@@ -150,9 +150,17 @@ Sent to Justin for final feedback, pending that I can make the video and publish
 7/8-
 Working on condensing code. Deleted conditional statement for < 30 days
 Discovered that the last day isn't pulling! Got that fixed up, reuploaded to sharepoint.
+Fixed rounding and added top 5% duration curve zoom.
+Revamped githib repo setup.
+Started going through code to make it more efficient and concise (using Claude)
+
+7/9-
+Fixed spacing errors and updated format for comments.
+Added market_run_id configuration and reworked code throughout to avoid redundancies.
 
 to do  
-- publish video, instructions, and final GUI on sharepoint and share with team!
+- finish analyzing code with AI to make sure it is pythonic
+- publish video on youtube and to sharepoint
 - finish HMA report
 
 

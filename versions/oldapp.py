@@ -1,4 +1,5 @@
 # this gui is the regular tkinter program, does not use the custom widgets. also allows for most report options instead of main 4
+# doesn't currently run because of SPTIE issues
 
 import tkinter as tk
 from tkinter import filedialog, ttk
