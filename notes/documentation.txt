@@ -158,6 +158,12 @@ Started going through code to make it more efficient and concise (using Claude)
 Fixed spacing errors and updated format for comments.
 Added market_run_id configuration and reworked code throughout to avoid redundancies.
 
+7/10-
+Attempted to fix the monthly chart, and then I think I hit a query limit. Nothing to push yet.
+
+7/11-
+Fixed the monthly average chart to work for multiple years, and display month names for better readability.
+
 to do  
 - fix charts for pulls for more than a year (monthly avg)
     heat map takes averages for all years

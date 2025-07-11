@@ -1,13 +1,9 @@
-import pandas as pd 
-import requests
 import os
-import matplotlib.pyplot as plt
-import seaborn as sns
+from zipfile import ZipFile
+from io import BytesIO
 import time
 from datetime import timedelta, datetime
 import sys
-from zipfile import ZipFile
-from io import BytesIO
 
 import tkinter as tk
 from tkinter import filedialog
@@ -15,6 +11,10 @@ import tkinter as tk
 from tkinter import filedialog
 from customtkinter import (CTk, CTkButton, CTkLabel, CTkComboBox, CTkEntry, set_appearance_mode)
 from tkcalendar import Calendar
+import pandas as pd
+import requests
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 import openpyxl
 from openpyxl.styles import Font
@@ -68,6 +68,8 @@ def backend(market_run_id, startdate, enddate):
     def pull_request(startdate, enddate): # 
         startdate = int(startdate.strftime('%Y%m%d'))  # Updating the date format
         enddate = int(enddate.strftime('%Y%m%d'))
+
+        
         url = "http://oasis.caiso.com/oasisapi/SingleZip"
         params = {
             "resultformat": 6,  # Resultformat should always be 6- it creates a CSV.
@@ -112,12 +114,6 @@ def backend(market_run_id, startdate, enddate):
         # Conditional cleaning based on column name for price
         if 'LMP_TYPE' in df.columns: 
                 df['LMP_TYPE'] = df['LMP_TYPE'].replace({'LMP':'LMP', 'MCC':'Congestion', 'MCE':'Energy', 'MCL':'Loss', 'MGHG':'Greenhouse Gas'})
-        # if 'MW' in df.columns: # rounding DAM and HASP
-        #     df['MW'] = df['MW'].round(4)
-        # if 'VALUE' in df.columns:# rounding RTM
-        #     df['VALUE'] = df['VALUE'].round(4)
-        # if 'PRC' in df.columns:# rounding FMM
-        #     df['PRC'] = df['PRC'].round(4)
 
         # Splitting date into smaller columns for readability and grouping
         df['INTERVALSTARTTIME_MST'] = df['INTERVALSTARTTIME_MST'].astype(str)  # Changing start time from date to string so I can split it
@@ -179,25 +175,32 @@ def backend(market_run_id, startdate, enddate):
     # Creating the monthly average sheet and chart
     def monthly_average(filename):
         df = pd.read_excel(filename)
+        # Create a new column containing month and year (spelled out) and have this be the X axis
+        df['Date'] = df['Month'].astype(str).str.zfill(2) + '/01/' + df['Year'].astype(str)
+        df['Date'] = pd.to_datetime(df['Date'], format='%m/%d/%Y')
+        df['Date'] = df['Date'].dt.strftime('%B %Y')  # Prints date as month spelled out and full year (May 2024)        
+        df = df.sort_values(['Year', 'Month']) # sorts first by year, then by month
+
         if 'Greenhouse Gas' in df.columns:
-            df_avg = df.groupby(['NODE', 'Year', 'Month'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() 
-            df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']] = df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']].round(4)
-            df_avg = df_avg[['NODE', 'Year', 'Month', 'LMP', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss']]  # Reordering column names
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Date'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() 
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Date', 'LMP', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss']]  # Reordering column names
         else:
-            df_avg = df.groupby(['NODE', 'Year', 'Month'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() 
-            df_avg[['Congestion', 'Energy', 'Loss','LMP']] = df_avg[['Congestion', 'Energy', 'Loss', 'LMP']].round(4)
-            df_avg = df_avg[['NODE', 'Year', 'Month', 'LMP', 'Congestion', 'Energy', 'Loss']] 
-        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a') as writer:  # Adding sheet to excel file
-            df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)       
-        plt.plot(df_avg['Month'], df_avg['LMP'])  # Creating monthly average line chart
+            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Date'], as_index=False)[['Congestion', 'Energy', 'LMP', 'Loss']].mean() 
+            df_avg = df_avg[['NODE', 'Year', 'Month', 'Date', 'LMP', 'Congestion', 'Energy', 'Loss']] 
+
+        with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:  # Adding sheet to excel file
+            df_avg.to_excel(writer, sheet_name='Monthly Average', index=False)
+        plt.figure(figsize=(10,8))         
+        plt.plot(df_avg['Date'], df_avg['LMP'])  # Creating monthly average line chart
+        plt.tick_params(axis='x', labelrotation=45)
+        plt.grid()
         plt.title(f'Monthly Average LMP {node}')
         plt.ylabel('Avg $/MWh')
         plt.xlabel('Month')
-        plt.grid()
         plt.savefig(f'{output_file_path}/monthlyline.png')  # Saving png to same place as csv file chunks
         plt.close()  # Closing plt so it doesn't combine with other chart later
         img_path = f'{output_file_path}/monthlyline.png'
-        add_chart_to_excel(filename, 'Monthly Average', img_path, 'I12')
+        add_chart_to_excel(filename, 'Monthly Average', img_path, 'J1')
 
         format_excel_cells('Monthly Average', 4, 10)  # Calling number formatting function
 
@@ -205,7 +208,7 @@ def backend(market_run_id, startdate, enddate):
     def hourly_average(filename):
         df = pd.read_excel(filename)
         if 'Greenhouse Gas' in df.columns: 
-            df_avg = df.groupby(['NODE', 'Year', 'Month', 'Day', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() 
+            df_avg = df.groupby(['NODE', 'Date', 'Day', 'Hour (MST)'], as_index=False)[['Congestion', 'Energy', 'Greenhouse Gas', 'LMP', 'Loss']].mean() 
             df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']] = df_avg[['Congestion', 'Energy', 'Loss', 'Greenhouse Gas', 'LMP']].round(4)            
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (MST)', 'Congestion', 'Energy', 'Greenhouse Gas', 'Loss', 'LMP']]  # Reordering column names
         else:
@@ -253,12 +256,9 @@ def backend(market_run_id, startdate, enddate):
             row += 1
             desc.to_excel(writer, sheet_name = 'Summary Statistics', startrow=row, header=True, index=True)  # Writing summary statistics to df
             row += 13  
-# wb.save(filename)
-#         wb = openpyxl.load_workbook(filename)
-        # sheet = wb['Summary Statistics']
+
         format_excel_cells('Summary Statistics', 2, 5)  # Calling number formatting function
         
-
     # Creating duration charts and adding them to the sheet
     def duration_chart(filename): 
         # Cleaning to get chart columns
@@ -314,7 +314,7 @@ def backend(market_run_id, startdate, enddate):
         plt.savefig(f'{output_file_path}/lowest5zoom.png') 
         plt.close()
         img_path = f'{output_file_path}/lowest5zoom.png'
-        add_chart_to_excel(filename, 'Summary Statistics', img_path, 'K46')
+        add_chart_to_excel(filename, 'Summary Statistics', img_path, 'L46')
 
         # Creating highest 5% zoom
         first5 = df.head(int(len(df)*.05))        
@@ -362,20 +362,16 @@ def backend(market_run_id, startdate, enddate):
         lmp_columns = get_lmp_columns(has_greenhouse_gas)
         return base_columns + lmp_columns
 
-
-    # User inputs map: market name, market_run_id, query_name, version - needed for parameters
-    map = { 
-        ('DAM'): ('DAM', 'PRC_LMP', 1), 
-        ('RTM'): ('RTM', 'PRC_INTVL_LMP', 3),
-        ('HASP'): ('HASP', 'PRC_HASP_LMP', 1),
-        ('FMM'): ('RTPD', 'PRC_RTPD_LMP', 2,), 
-    }
     
-    market_run_id, queryname, version = map.get((market_run_id), ('unknown'))  # Getting variables from map based on user input
+    # Preparing variables from user input
+    get_market_config(market_run_id)
+    config = get_market_config(market_run_id)
+    queryname = config['queryname']
+    version = config['version']
     startdate = datetime.strptime(startdate, '%m/%d/%y').date()  # Formats it to work with datetime package
     enddate = datetime.strptime(enddate, '%m/%d/%y').date()
     enddate = enddate + timedelta(days=1)  # Adding on a day to the desired pull so it gets the full last day
-    difference = enddate - startdate  # Counts days in between
+    difference = enddate - startdate  
     days = difference.days  # Making a counter for my loop bc .days is readonly
 
     # Logic for using the API, cleaning, and formatting as an xlsx file.
@@ -443,7 +439,7 @@ def backend(market_run_id, startdate, enddate):
     status_lbl.configure(text='Finished!')  # Updating status label 
     root.update()            
 
-   
+
 # Functions for all the button/widgets of GUI
 def submit():  # After user gives all inputs, runs all of the backend code
     status_lbl.configure(text='Running...')
@@ -480,7 +476,7 @@ def update_report_lbl(choice):  # Displays the report name based on the user cho
 
 # Tkinter program
 root = CTk()  # Initializing window
-root.geometry('800x600') 
+root.geometry('800x600')
 set_appearance_mode('light')
 
 node_var = tk.StringVar()
