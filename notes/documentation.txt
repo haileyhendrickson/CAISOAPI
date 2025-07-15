@@ -163,11 +163,9 @@ Attempted to fix the monthly chart, and then I think I hit a query limit. Nothin
 
 7/11-
 Fixed the monthly average chart to work for multiple years, and display month names for better readability.
+Readded to sharepoint.
 
 to do  
-- fix charts for pulls for more than a year (monthly avg)
-    heat map takes averages for all years
-    duration chart is a % of all time, not exactly by years
 - publish video on youtube and to sharepoint
 - finish HMA report
 
