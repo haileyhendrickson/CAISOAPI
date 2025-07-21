@@ -165,6 +165,9 @@ Attempted to fix the monthly chart, and then I think I hit a query limit. Nothin
 Fixed the monthly average chart to work for multiple years, and display month names for better readability.
 Readded to sharepoint.
 
+7/21-
+Installed pylint and fixed whitespaces and shortened code lines to > 100. 
+
 to do  
 - publish video on youtube and to sharepoint
 - finish HMA report
