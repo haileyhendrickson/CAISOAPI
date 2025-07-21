@@ -9,6 +9,8 @@ import time
 from datetime import datetime, timedelta
 from io import BytesIO
 from zipfile import ZipFile
+import tkinter as tk
+from tkinter import filedialog
 
 import pandas as pd
 import requests
@@ -22,8 +24,6 @@ from openpyxl.styles import Font
 from pydantic import ValidationError
 
 from tkcalendar import Calendar
-import tkinter as tk
-from tkinter import filedialog
 from customtkinter import CTk, CTkButton, CTkLabel, CTkComboBox, CTkEntry, set_appearance_mode
 
 # Market configuration- centralized settings
@@ -249,7 +249,7 @@ def backend(market_run_id, startdate, enddate):
                                                  'LMP', 'Loss']].mean()
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Date', 'LMP',
                              'Congestion', 'Energy', 'Loss']]
-        
+
         # Adding sheet to excel file
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx',
                             engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -291,7 +291,7 @@ def backend(market_run_id, startdate, enddate):
                                                                      'Loss', 'LMP']]
             df_avg = df_avg[['NODE', 'Year', 'Month', 'Day', 'Hour (MST)', 'Congestion', 'Energy',
                              'Loss', 'LMP']]
-        
+
         count = (df_avg['LMP'] < 0).sum()  # Counting how many hours LMP is below 0
 
         with pd.ExcelWriter(f'{output_file_path}/{market_run_id} {timestamp}.xlsx',
@@ -459,7 +459,7 @@ def backend(market_run_id, startdate, enddate):
         if has_greenhouse_gas:
             base_columns.insert(-1, 'Greenhouse Gas')  # Inserting before LMP
         return base_columns
-    
+
     # Filtering columns depending on if it has greenhouse gas or not
     def get_ordered_columns(has_greenhouse_gas=True):
         base_columns = ['INTERVALSTARTTIME_MST', 'INTERVALENDTIME_MST',
@@ -562,7 +562,7 @@ def submit():
     market_run_id=MRIDDropdown.get()  # Grabbing market_run_id based on user input
     backend(market_run_id, startdate, enddate)  # Calling backend code
 
-def findStartDate():
+def find_start_date():
     '''
     Creates start date based on user input
     '''
@@ -570,7 +570,7 @@ def findStartDate():
     startdate = cal.get_date()
     startdate_label.configure(text=f'Start date: {startdate}')
 
-def findEndDate():
+def find_end_date():
     '''
     Creates start date based on user input
     '''
@@ -623,9 +623,9 @@ cal = Calendar(root, selectmode ='day',
             year=2024, month=1,  # Default setting
             day=1, font=('Arial', 15))
 
-chooseStartDate = CTkButton(root, text='Choose Start Date', command=findStartDate,
+chooseStartDate = CTkButton(root, text='Choose Start Date', command=find_start_date,
                             corner_radius=26, fg_color='#162157', hover_color='#6D7DCF')
-chooseEndDate = CTkButton(root, text='Choose End Date', command=findEndDate, corner_radius=26,
+chooseEndDate = CTkButton(root, text='Choose End Date', command=find_end_date, corner_radius=26,
                           fg_color='#162157', hover_color='#6D7DCF')
 
 startdate_label = CTkLabel(root, text= 'Start Date: ', font=('Arial', 15), text_color='#04033A')
