@@ -320,7 +320,7 @@ def backend(market_run_id, startdate, enddate):
         add_chart_to_excel(filename, 'Hourly Average', img_path, 'L3')  # Adding chart to excel
         format_excel_cells('Hourly Average', 6,10)  # Calling number formatting function
 
-    # Creating summary statistics sheet 
+    # Creating summary statistics sheet
     def summary_statistics(filename):
         '''
         This method creates a new sheet depicting summary stats for
