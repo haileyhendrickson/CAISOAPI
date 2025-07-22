@@ -26,7 +26,9 @@ from pydantic import ValidationError
 from tkcalendar import Calendar
 from customtkinter import CTk, CTkButton, CTkLabel, CTkComboBox, CTkEntry, set_appearance_mode
 
-# Market configuration- centralized settings
+# =============================================================================
+# CONSTANTS AND CONFIGURATION
+# =============================================================================
 MARKET_CONFIG = {
     'DAM': {
         'queryname': 'PRC_LMP',
@@ -62,7 +64,6 @@ MARKET_CONFIG = {
     }
 }
 
-# Configuration to get related variables based on market run id
 def get_market_config(market_run_id):
     '''
     This method calls the MARKET_CONFIG map and links it to the
@@ -70,7 +71,9 @@ def get_market_config(market_run_id):
     '''
     return MARKET_CONFIG.get(market_run_id, MARKET_CONFIG['DAM'])
 
-# Pulls, cleans, and formats data into the excel file.
+# =============================================================================
+# DATA PROCESSING FUNCTION
+# =============================================================================
 def backend(market_run_id, startdate, enddate):
     '''
     This method runs everything the GUI does after the submit button
@@ -552,7 +555,9 @@ def backend(market_run_id, startdate, enddate):
     root.update()
 
 
-# Functions for all the button/widgets of GUI
+# =============================================================================
+# GUI WIDGET FUNCTIONS
+# =============================================================================
 def submit():
     '''
     After user gives all inputs, this method runs all of the backend code.
@@ -601,7 +606,9 @@ def update_report_lbl(choice):
     root.update()
 
 
-# Tkinter program
+# =============================================================================
+# TKINTER PROGRAM
+# =============================================================================
 root = CTk()  # Initializing window
 root.geometry('800x600')
 set_appearance_mode('light')
@@ -611,7 +618,9 @@ node_var = tk.StringVar()
 startdate = None  # Initializing
 enddate = None
 
-# Widgets
+# =============================================================================
+# TKINTER WIDGETS
+# =============================================================================
 MRID_label = CTkLabel(root, text='Market Type:', font=('Arial',15), text_color='#04033A')
 MRIDDropdown = CTkComboBox(master=root, values=['DAM', 'HASP','RTM', 'FMM'],
                            command=update_report_lbl)
@@ -647,7 +656,9 @@ status_lbl = CTkLabel(root, text='', font=('Arial', 15), text_color='#04033A')
 title_lbl = CTkLabel(root, text='CAISO OASIS DATA', font=('Arial', 20, 'bold'),
                      text_color='#04033A')
 
-# Grid: where all the widgets are displayed on the GUI
+# =============================================================================
+# TKINTER GRID AND APP START
+# =============================================================================
 cal.grid(row=6, column=0)
 chooseStartDate.grid(row=4, column=0)
 chooseEndDate.grid(row=5, column=0)
