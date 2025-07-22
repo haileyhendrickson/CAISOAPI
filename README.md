@@ -1,4 +1,4 @@
-# CAISOAPI
+# CAISO API
 
 A GUI-based Python tool to query and visualize data from the CAISO API. The program efficiently queries 4 different LMP reports from https://oasis.caiso.com. These include: Day Ahead Market (DAM), Hour Ahead Market (HASP), Five Minute Market (FMM), and the Real Time Market (RTM). This program queries the data (for any date range) and formats it appropriately.  
 
