@@ -166,19 +166,11 @@ Fixed the monthly average chart to work for multiple years, and display month na
 Readded to sharepoint.
 
 7/21-
-Installed pylint and fixed whitespaces and shortened code lines to > 100. 
+Installed pylint and fixed whitespaces and shortened code lines to > 100.
 
-to do  
-- publish video on youtube and to sharepoint
-- finish HMA report
-
-
-
-final steps: (These will need to be done every time changes are made to the gui)
-- destroy and rebuild gui with changes 
-- pyinstaller --onefile --windowed gui.py (bash command)
-- put on sharepoint
+7/23-
+Edited and published video on youtube and added to sharepoint and github.
 
 nodes 
-0096WD_7_N001
+0096WD_7_N001,
 PALOVRDE_5_N101
