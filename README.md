@@ -18,7 +18,7 @@ A GUI-based Python tool to query and visualize data from the CAISO API. The prog
 ## Use
 Download .exe file to local machine, open it, and enjoy!
 
-Tutorial: 
+Tutorial Video (click to watch): 
 
 [![Watch the video](https://img.youtube.com/vi/L6PMC6PBSPg/hqdefault.jpg)](https://www.youtube.com/watch?v=L6PMC6PBSPg)
 
